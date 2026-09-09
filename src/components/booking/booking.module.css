@@ -1,0 +1,463 @@
+/* Booking Modal Backdrop & Container - Clean Corporate Theme */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  opacity: 0;
+  animation: fadeInBackdrop 0.2s ease-out forwards;
+}
+
+@keyframes fadeInBackdrop {
+  to { opacity: 1; }
+}
+
+.modalDialog {
+  width: 100%;
+  max-width: 1040px;
+  height: 90vh;
+  max-height: 820px;
+  background: #ffffff;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 20px 45px -10px rgba(0, 0, 0, 0.2);
+  display: grid;
+  grid-template-columns: 340px 1fr;
+  overflow: hidden;
+  position: relative;
+  animation: scaleIn 0.25s ease-out forwards;
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.98) translateY(10px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* Close Button */
+.closeButton {
+  position: absolute;
+  top: 16px;
+  right: 18px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #f1f5f9;
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-fast);
+  z-index: 20;
+}
+
+.closeButton:hover {
+  background: #fee2e2;
+  border-color: #fca5a5;
+  color: #dc2626;
+}
+
+/* Left Pane: Clean Dynamic Receipt Panel */
+.receiptPanel {
+  background: #f8faf8;
+  border-right: 1px solid var(--border-subtle);
+  padding: 32px 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  overflow-y: auto;
+}
+
+.clinicBrand {
+  margin-bottom: 24px;
+}
+
+.clinicBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  background: var(--brand-green-subtle);
+  border: 1px solid var(--brand-green-border);
+  color: var(--brand-green);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 12px;
+}
+
+.pulseDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--brand-green);
+}
+
+.clinicName {
+  font-size: 20px;
+  font-weight: 800;
+  color: #1e293b;
+  line-height: 1.25;
+  margin-bottom: 6px;
+}
+
+.clinicAddress {
+  font-size: 13px;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  line-height: 1.4;
+}
+
+.timezoneBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #0284c7;
+  background: #f0f9ff;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid #bae6fd;
+  margin-top: 14px;
+  font-weight: 500;
+}
+
+/* Receipt Details */
+.receiptSection {
+  background: #ffffff;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 18px;
+  margin: 16px 0;
+  box-shadow: var(--shadow-sm);
+}
+
+.receiptHeading {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  font-weight: 700;
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--border-subtle);
+  padding-bottom: 8px;
+}
+
+.receiptItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 10px;
+  font-size: 13px;
+}
+
+.receiptLabel {
+  color: var(--text-secondary);
+}
+
+.receiptValue {
+  color: #1e293b;
+  font-weight: 600;
+  text-align: right;
+  max-width: 170px;
+}
+
+.totalCard {
+  background: #ffffff;
+  border: 1.5px solid var(--brand-green-border);
+  border-radius: var(--radius-md);
+  padding: 16px 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: auto;
+  box-shadow: 0 4px 12px rgba(104, 159, 56, 0.08);
+}
+
+.totalLabel {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.totalAmount {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--brand-green);
+  font-family: var(--font-heading);
+}
+
+.currencyTag {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-left: 4px;
+  font-weight: 600;
+}
+
+/* Right Pane: Form Content */
+.formPanel {
+  padding: 32px 36px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  background: #ffffff;
+  overflow-y: auto;
+  position: relative;
+}
+
+/* Service Tier Selector Cards */
+.tierGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.tierCard {
+  background: #ffffff;
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-md);
+  padding: 14px 10px;
+  text-align: center;
+  transition: all var(--transition-fast);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+}
+
+.tierCard:hover {
+  background: var(--brand-green-subtle);
+  border-color: var(--brand-green);
+}
+
+.tierCardSelected {
+  background: var(--brand-green-subtle) !important;
+  border-color: var(--brand-green) !important;
+  box-shadow: 0 0 0 2px var(--brand-green);
+}
+
+.tierDuration {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 4px;
+}
+
+.tierPrice {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--brand-green);
+  font-family: var(--font-heading);
+}
+
+/* Form Controls */
+.formGroup {
+  margin-bottom: 14px;
+}
+
+.formLabel {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+  margin-bottom: 6px;
+}
+
+.formSelect, .formInput, .formTextarea {
+  width: 100%;
+  padding: 10px 14px;
+  background: #ffffff;
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-sm);
+  color: #1e293b;
+  font-size: 14px;
+  outline: none;
+  transition: all var(--transition-fast);
+}
+
+.formSelect:focus, .formInput:focus, .formTextarea:focus {
+  border-color: var(--brand-green);
+  box-shadow: 0 0 0 3px rgba(104, 159, 56, 0.15);
+}
+
+.inputError {
+  border-color: #ef4444 !important;
+}
+
+.errorText {
+  color: #dc2626;
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+/* Time Slot Picker Grid */
+.slotGridContainer {
+  max-height: 220px;
+  overflow-y: auto;
+  padding-right: 4px;
+  margin-top: 12px;
+}
+
+.slotGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.slotPill {
+  padding: 9px 6px;
+  border-radius: var(--radius-sm);
+  background: #f8fafc;
+  border: 1px solid var(--border-subtle);
+  color: #334155;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+  transition: all var(--transition-fast);
+}
+
+.slotPill:hover {
+  background: var(--brand-green-subtle);
+  border-color: var(--brand-green);
+  color: var(--brand-green);
+}
+
+.slotPillSelected {
+  background: var(--brand-green) !important;
+  border-color: var(--brand-green) !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 6px rgba(104, 159, 56, 0.3);
+}
+
+.noSlotsNotice {
+  text-align: center;
+  padding: 24px 16px;
+  background: #f8fafc;
+  border-radius: var(--radius-md);
+  border: 1px dashed var(--border-medium);
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+/* Action Buttons */
+.btnPrimary {
+  padding: 12px 28px;
+  border-radius: var(--radius-sm);
+  background: var(--brand-green);
+  border: 1px solid var(--brand-green-hover);
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 2px 8px rgba(104, 159, 56, 0.25);
+  transition: all var(--transition-fast);
+}
+
+.btnPrimary:hover:not(:disabled) {
+  background: var(--brand-green-hover);
+  box-shadow: 0 4px 12px rgba(104, 159, 56, 0.35);
+}
+
+.btnPrimary:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.btnSecondary {
+  padding: 10px 18px;
+  border-radius: var(--radius-sm);
+  background: #ffffff;
+  border: 1px solid var(--border-medium);
+  color: var(--text-secondary);
+  font-weight: 600;
+  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all var(--transition-fast);
+}
+
+.btnSecondary:hover {
+  background: #f1f5f9;
+  color: #1e293b;
+}
+
+/* Success Screen */
+.successScreen {
+  text-align: center;
+  padding: 40px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.successIcon {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: var(--brand-green-subtle);
+  border: 2px solid var(--brand-green);
+  color: var(--brand-green);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 18px;
+}
+
+.successTitle {
+  font-size: 22px;
+  color: #1e293b;
+  margin-bottom: 8px;
+}
+
+.successDesc {
+  color: var(--text-secondary);
+  font-size: 14px;
+  max-width: 440px;
+  line-height: 1.6;
+  margin-bottom: 24px;
+}
+
+/* Mobile Responsive Breakpoint */
+@media (max-width: 860px) {
+  .modalDialog {
+    grid-template-columns: 1fr;
+    height: 95vh;
+    max-height: none;
+    overflow-y: auto;
+  }
+
+  .receiptPanel {
+    border-right: none;
+    border-bottom: 1px solid var(--border-subtle);
+    padding: 24px 20px;
+  }
+
+  .formPanel {
+    padding: 24px 20px;
+  }
+
+  .slotGrid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}

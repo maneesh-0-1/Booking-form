@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Test External Website Embed</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 60px;
+      text-align: center;
+      background: #f1f5f9;
+    }
+    .custom-btn {
+      background: #7cb342;
+      color: #fff;
+      padding: 14px 28px;
+      font-size: 16px;
+      font-weight: bold;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+  </style>
+  <!-- Load our universal embed script -->
+  <script src="http://localhost:3005/embed.js" defer></script>
+</head>
+<body>
+  <h1>External Website Demo Page</h1>
+  <p>Click the button below to test the embedded booking modal popup:</p>
+  
+  <!-- Any button with class="yyc-book-btn" -->
+  <button class="custom-btn yyc-book-btn">Book Appointment via Class</button>
+  
+  <br><br>
+  <!-- Or any button with onclick="openYYCBooking()" -->
+  <button class="custom-btn" onclick="openYYCBooking()">Book Appointment via Onclick</button>
+</body>
+</html>

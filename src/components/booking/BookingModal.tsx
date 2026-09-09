@@ -379,7 +379,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
             /* UNIFIED ALL-IN-ONE BOOKING FORM */
             <div className="animate-fade-in">
               <div style={{ marginBottom: 20, paddingBottom: 12, borderBottom: "1px solid var(--border-subtle)" }}>
-                <h2 style={{ fontSize: 20, fontWeight: 800, color: "#fff" }}>
+                <h2 style={{ fontSize: 20, fontWeight: 800, color: "#1e293b" }}>
                   Schedule Your Clinical Session
                 </h2>
                 <p style={{ fontSize: 13, color: "var(--text-secondary)", marginTop: 4 }}>
@@ -414,12 +414,12 @@ export const BookingModal: React.FC<BookingModalProps> = ({
               ) : (
                 <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
                   {/* SECTION 1: Service & Duration Tier */}
-                  <div style={{ background: "rgba(255, 255, 255, 0.02)", border: "1px solid var(--border-subtle)", borderRadius: "var(--radius-md)", padding: 18 }}>
+                  <div style={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: "var(--radius-md)", padding: 18 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
-                      <span style={{ width: 22, height: 22, borderRadius: "50%", background: "var(--accent-teal-subtle)", color: "var(--accent-teal-glow)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700 }}>
+                      <span style={{ width: 24, height: 24, borderRadius: "50%", background: "#f1f8e9", color: "#689f38", border: "1px solid #c5e1a5", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700 }}>
                         1
                       </span>
-                      <span style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>
+                      <span style={{ fontSize: 15, fontWeight: 700, color: "#1e293b" }}>
                         Therapeutic Focus & Duration
                       </span>
                     </div>
@@ -461,12 +461,12 @@ export const BookingModal: React.FC<BookingModalProps> = ({
 
                   {/* SECTION 2: Date & Available Time Slot */}
                   {selectedTier && (
-                    <div style={{ background: "rgba(255, 255, 255, 0.02)", border: "1px solid var(--border-subtle)", borderRadius: "var(--radius-md)", padding: 18 }}>
+                    <div style={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: "var(--radius-md)", padding: 18 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
-                        <span style={{ width: 22, height: 22, borderRadius: "50%", background: "var(--accent-teal-subtle)", color: "var(--accent-teal-glow)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700 }}>
+                        <span style={{ width: 24, height: 24, borderRadius: "50%", background: "#f1f8e9", color: "#689f38", border: "1px solid #c5e1a5", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700 }}>
                           2
                         </span>
-                        <span style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>
+                        <span style={{ fontSize: 15, fontWeight: 700, color: "#1e293b" }}>
                           Choose Appointment Time (Mountain Time)
                         </span>
                       </div>
@@ -489,12 +489,12 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                   )}
 
                   {/* SECTION 3: Patient Intake Details */}
-                  <div style={{ background: "rgba(255, 255, 255, 0.02)", border: "1px solid var(--border-subtle)", borderRadius: "var(--radius-md)", padding: 18 }}>
+                  <div style={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: "var(--radius-md)", padding: 18 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
-                      <span style={{ width: 22, height: 22, borderRadius: "50%", background: "var(--accent-teal-subtle)", color: "var(--accent-teal-glow)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700 }}>
+                      <span style={{ width: 24, height: 24, borderRadius: "50%", background: "#f1f8e9", color: "#689f38", border: "1px solid #c5e1a5", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700 }}>
                         3
                       </span>
-                      <span style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>
+                      <span style={{ fontSize: 15, fontWeight: 700, color: "#1e293b" }}>
                         Patient Intake Details
                       </span>
                     </div>

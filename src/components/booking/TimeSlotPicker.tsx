@@ -115,7 +115,7 @@ export const TimeSlotPicker: React.FC<TimeSlotPickerProps> = ({
             }}
           >
             <AlertCircle size={22} style={{ margin: "0 auto 8px", color: "#f59e0b" }} />
-            <p style={{ fontWeight: 700, fontSize: 14, color: "#fff", marginBottom: 4 }}>
+            <p style={{ fontWeight: 700, fontSize: 14, color: "#1e293b", marginBottom: 4 }}>
               Clinic Holiday: {holidayNotice}
             </p>
             <p style={{ fontSize: 12, color: "var(--text-secondary)" }}>
@@ -129,7 +129,7 @@ export const TimeSlotPicker: React.FC<TimeSlotPickerProps> = ({
           </div>
         ) : slots.length === 0 ? (
           <div className={styles.noSlotsNotice}>
-            <p style={{ fontWeight: 600, color: "#ffffff", marginBottom: 4 }}>No available slots on this date</p>
+            <p style={{ fontWeight: 600, color: "#1e293b", marginBottom: 4 }}>No available slots on this date</p>
             <p>The practitioner is fully booked or outside clinical hours. Please select another date.</p>
           </div>
         ) : (

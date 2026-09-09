@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import styles from "./booking.module.css";
 import { Loader2, Calendar, AlertCircle } from "lucide-react";
-import { AvailableSlot } from "@/lib/timezone";
+import { AvailableSlot, getLocalTodayDateString } from "@/lib/timezone";
 
 interface TimeSlotPickerProps {
   selectedDate: string;
@@ -71,7 +71,7 @@ export const TimeSlotPicker: React.FC<TimeSlotPickerProps> = ({
     };
   }, [selectedDate, durationMinutes]);
 
-  const todayStr = new Date().toISOString().split("T")[0];
+  const todayStr = getLocalTodayDateString();
 
   return (
     <div>

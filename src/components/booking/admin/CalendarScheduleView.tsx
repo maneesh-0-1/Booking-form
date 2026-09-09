@@ -23,31 +23,31 @@ export const CalendarScheduleView: React.FC<CalendarScheduleViewProps> = ({
   onDeleteBlock,
 }) => {
   return (
-    <div style={{ background: "rgba(15, 23, 42, 0.7)", border: "1px solid var(--border-subtle)", borderRadius: "var(--radius-lg)", padding: 24 }}>
+    <div style={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: 12, padding: 24, boxShadow: "0 1px 3px rgba(0,0,0,0.03)" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
         <div>
-          <h3 style={{ fontSize: 18, fontWeight: 700 }}>Active Schedule & Time Blocks</h3>
-          <p style={{ fontSize: 13, color: "var(--text-secondary)" }}>
+          <h3 style={{ fontSize: 18, fontWeight: 700, color: "#1e293b" }}>Active Schedule & Time Blocks</h3>
+          <p style={{ fontSize: 13, color: "#64748b" }}>
             Real-time status of practitioner blocks vs patient reservations.
           </p>
         </div>
         <div style={{ display: "flex", gap: 16, fontSize: 12 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <span style={{ width: 10, height: 10, borderRadius: 2, background: "var(--accent-teal)" }} />
-            <span style={{ color: "var(--text-secondary)" }}>Booked Appointment</span>
+            <span style={{ width: 10, height: 10, borderRadius: 2, background: "#689f38" }} />
+            <span style={{ color: "#475569" }}>Booked Appointment</span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
             <span style={{ width: 10, height: 10, borderRadius: 2, background: "#f59e0b" }} />
-            <span style={{ color: "var(--text-secondary)" }}>Doctor Block</span>
+            <span style={{ color: "#475569" }}>Doctor Block</span>
           </div>
         </div>
       </div>
 
       {blocks.length === 0 ? (
-        <div style={{ textAlign: "center", padding: "40px 16px", color: "var(--text-muted)", background: "rgba(255, 255, 255, 0.02)", borderRadius: 12, border: "1px dashed var(--border-subtle)" }}>
-          <Calendar size={28} style={{ margin: "0 auto 8px", opacity: 0.6 }} />
-          <p style={{ fontWeight: 600, color: "#fff" }}>No active blocks or bookings</p>
-          <p style={{ fontSize: 13, marginTop: 4 }}>All clinical slots within 09:00 - 18:00 MT are currently available.</p>
+        <div style={{ textAlign: "center", padding: "40px 16px", color: "#64748b", background: "#f8fafc", borderRadius: 12, border: "1px dashed #cbd5e1" }}>
+          <Calendar size={28} style={{ margin: "0 auto 8px", opacity: 0.6, color: "#689f38" }} />
+          <p style={{ fontWeight: 600, color: "#1e293b" }}>No active blocks or bookings</p>
+          <p style={{ fontSize: 13, marginTop: 4 }}>All clinical slots within clinic hours are currently available.</p>
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 10, maxHeight: 400, overflowY: "auto", paddingRight: 6 }}>
@@ -65,11 +65,11 @@ export const CalendarScheduleView: React.FC<CalendarScheduleViewProps> = ({
                   alignItems: "center",
                   padding: "14px 18px",
                   borderRadius: 10,
-                  background: isBooked ? "rgba(20, 184, 166, 0.08)" : "rgba(245, 158, 11, 0.08)",
-                  borderLeft: `4px solid ${isBooked ? "var(--accent-teal)" : "#f59e0b"}`,
-                  borderTop: "1px solid var(--border-subtle)",
-                  borderRight: "1px solid var(--border-subtle)",
-                  borderBottom: "1px solid var(--border-subtle)",
+                  background: isBooked ? "#f1f8e9" : "#fffbeb",
+                  borderLeft: `4px solid ${isBooked ? "#689f38" : "#f59e0b"}`,
+                  borderTop: `1px solid ${isBooked ? "#dcedc8" : "#fde68a"}`,
+                  borderRight: `1px solid ${isBooked ? "#dcedc8" : "#fde68a"}`,
+                  borderBottom: `1px solid ${isBooked ? "#dcedc8" : "#fde68a"}`,
                 }}
               >
                 <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
@@ -77,8 +77,8 @@ export const CalendarScheduleView: React.FC<CalendarScheduleViewProps> = ({
                     style={{
                       padding: 8,
                       borderRadius: 8,
-                      background: isBooked ? "rgba(20, 184, 166, 0.2)" : "rgba(245, 158, 11, 0.2)",
-                      color: isBooked ? "var(--accent-teal-glow)" : "#fbbf24",
+                      background: isBooked ? "#dcedc8" : "#fef3c7",
+                      color: isBooked ? "#33691e" : "#b45309",
                     }}
                   >
                     {isBooked ? <UserCheck size={18} /> : <Lock size={18} />}
@@ -86,7 +86,7 @@ export const CalendarScheduleView: React.FC<CalendarScheduleViewProps> = ({
 
                   <div>
                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      <span style={{ fontWeight: 700, fontSize: 14, color: "#fff" }}>
+                      <span style={{ fontWeight: 700, fontSize: 14, color: "#1e293b" }}>
                         {format(sDate, "EEE, MMM d, yyyy")}
                       </span>
                       <span
@@ -95,21 +95,21 @@ export const CalendarScheduleView: React.FC<CalendarScheduleViewProps> = ({
                           fontWeight: 700,
                           padding: "2px 8px",
                           borderRadius: 12,
-                          background: isBooked ? "rgba(20, 184, 166, 0.25)" : "rgba(245, 158, 11, 0.25)",
-                          color: isBooked ? "var(--accent-teal-glow)" : "#fbbf24",
+                          background: isBooked ? "#dcfce7" : "#fef3c7",
+                          color: isBooked ? "#15803d" : "#b45309",
                         }}
                       >
                         {block.blockType}
                       </span>
                     </div>
 
-                    <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 4, fontSize: 13, color: "var(--text-secondary)" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 4, fontSize: 13, color: "#475569" }}>
                       <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
                         <Clock size={12} />
                         {format(sDate, "h:mm a")} – {format(eDate, "h:mm a")} (MT)
                       </span>
                       {block.reason && (
-                        <span style={{ color: "var(--text-muted)" }}>• {block.reason}</span>
+                        <span style={{ color: "#64748b" }}>• {block.reason}</span>
                       )}
                     </div>
                   </div>

@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { X, ShieldAlert, Clock, Loader2, Calendar } from "lucide-react";
 import styles from "../booking.module.css";
+import { getLocalTodayDateString } from "@/lib/timezone";
 
 interface QuickBlockModalProps {
   isOpen: boolean;
@@ -17,7 +18,7 @@ export const QuickBlockModal: React.FC<QuickBlockModalProps> = ({
   onBlockCreated,
   adminToken,
 }) => {
-  const todayStr = new Date().toISOString().split("T")[0];
+  const todayStr = getLocalTodayDateString();
   const [blockDate, setBlockDate] = useState<string>(todayStr);
   const [startTime, setStartTime] = useState<string>("13:00");
   const [endTime, setEndTime] = useState<string>("15:00");

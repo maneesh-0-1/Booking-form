@@ -1,5 +1,7 @@
 import mysql, { Pool, PoolConnection } from "mysql2/promise";
 import { formatToSqlDateTime, formatToClinicDateStr, parseClinicDateTime } from "./timezone";
+import fs from "fs";
+import path from "path";
 
 // Defensive configuration
 const DB_HOST = process.env.DB_HOST || "127.0.0.1";
@@ -31,7 +33,10 @@ export function getPool(): Pool {
   return pool;
 }
 
-// In-Memory Storage for Resilient Dev Fallback when remote MariaDB socket is offline
+// Persistent Storage for Zero-Database / Resilient Dev Fallback
+const DATA_DIR = path.join(process.cwd(), "data");
+const DATA_FILE = path.join(DATA_DIR, "clinic_data.json");
+
 interface MemService {
   id: number;
   name: string;
@@ -50,6 +55,7 @@ interface MemServiceTier {
 
 interface MemBooking {
   id: number;
+  reference_number: string;
   service_tier_id: number;
   client_name: string;
   client_email: string;
@@ -72,69 +78,146 @@ interface MemTimeBlock {
   booking_id: number | null;
 }
 
-const memDb = {
-  services: [
-    {
-      id: 1,
-      name: "Foot Reflexology Therapy",
-      description: "Targeted stimulation of neurological reflex zones in feet to restore equilibrium, relieve tension, and enhance circulation.",
-      is_active: true,
-      created_at: new Date(),
-    },
-    {
-      id: 2,
-      name: "Hand & Palm Reflexology",
-      description: "Precision pressure technique on neuromuscular zones of the palms and fingers to relieve repetitive strain and upper body stress.",
-      is_active: true,
-      created_at: new Date(),
-    },
-    {
-      id: 3,
-      name: "Combined Integrated Reflexology",
-      description: "Comprehensive therapeutic dual-treatment focusing on both foot and hand meridian points for full autonomic nervous balance.",
-      is_active: true,
-      created_at: new Date(),
-    },
-    {
-      id: 4,
-      name: "Deep Meridian Clinical Care",
-      description: "Specialized therapeutic focus addressing persistent structural fatigue, chronic inflammation, and plantar fascial tension.",
-      is_active: true,
-      created_at: new Date(),
-    },
-  ] as MemService[],
-
-  serviceTiers: [
-    { id: 1, service_id: 1, duration_minutes: 30, price: 65.0, currency: "CAD" },
-    { id: 2, service_id: 1, duration_minutes: 45, price: 90.0, currency: "CAD" },
-    { id: 3, service_id: 1, duration_minutes: 60, price: 115.0, currency: "CAD" },
-
-    { id: 4, service_id: 2, duration_minutes: 30, price: 60.0, currency: "CAD" },
-    { id: 5, service_id: 2, duration_minutes: 45, price: 85.0, currency: "CAD" },
-    { id: 6, service_id: 2, duration_minutes: 60, price: 110.0, currency: "CAD" },
-
-    { id: 7, service_id: 3, duration_minutes: 30, price: 75.0, currency: "CAD" },
-    { id: 8, service_id: 3, duration_minutes: 45, price: 105.0, currency: "CAD" },
-    { id: 9, service_id: 3, duration_minutes: 60, price: 135.0, currency: "CAD" },
-
-    { id: 10, service_id: 4, duration_minutes: 30, price: 80.0, currency: "CAD" },
-    { id: 11, service_id: 4, duration_minutes: 45, price: 110.0, currency: "CAD" },
-    { id: 12, service_id: 4, duration_minutes: 60, price: 140.0, currency: "CAD" },
-  ] as MemServiceTier[],
-
-  bookings: [] as MemBooking[],
-  timeBlocks: [] as MemTimeBlock[],
+interface ClinicStore {
+  services: MemService[];
+  serviceTiers: MemServiceTier[];
+  bookings: MemBooking[];
+  timeBlocks: MemTimeBlock[];
   settings: {
-    clinic_start_time: "10:00",
-    clinic_end_time: "20:00",
-  },
-  holidays: [] as { id: number; holiday_date: string; name: string }[],
-  nextBookingId: 101,
-  nextBlockId: 201,
-  nextHolidayId: 1,
-  nextServiceId: 5,
-  nextTierId: 13,
-};
+    clinic_start_time: string;
+    clinic_end_time: string;
+  };
+  holidays: { id: number; holiday_date: string; name: string }[];
+  nextBookingId: number;
+  nextBlockId: number;
+  nextHolidayId: number;
+  nextServiceId: number;
+  nextTierId: number;
+}
+
+export function generateUniqueReference(): string {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let code = "YYC-";
+  for (let i = 0; i < 6; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return code;
+}
+
+function getDefaultStore(): ClinicStore {
+  return {
+    services: [
+      {
+        id: 1,
+        name: "Foot Reflexology Therapy",
+        description: "Targeted stimulation of neurological reflex zones in feet to restore equilibrium, relieve tension, and enhance circulation.",
+        is_active: true,
+        created_at: new Date(),
+      },
+      {
+        id: 2,
+        name: "Hand & Palm Reflexology",
+        description: "Precision pressure technique on neuromuscular zones of the palms and fingers to relieve repetitive strain and upper body stress.",
+        is_active: true,
+        created_at: new Date(),
+      },
+      {
+        id: 3,
+        name: "Combined Integrated Reflexology",
+        description: "Comprehensive therapeutic dual-treatment focusing on both foot and hand meridian points for full autonomic nervous balance.",
+        is_active: true,
+        created_at: new Date(),
+      },
+      {
+        id: 4,
+        name: "Deep Meridian Clinical Care",
+        description: "Specialized therapeutic focus addressing persistent structural fatigue, chronic inflammation, and plantar fascial tension.",
+        is_active: true,
+        created_at: new Date(),
+      },
+    ],
+    serviceTiers: [
+      { id: 1, service_id: 1, duration_minutes: 30, price: 65.0, currency: "CAD" },
+      { id: 2, service_id: 1, duration_minutes: 45, price: 90.0, currency: "CAD" },
+      { id: 3, service_id: 1, duration_minutes: 60, price: 115.0, currency: "CAD" },
+      { id: 4, service_id: 2, duration_minutes: 30, price: 60.0, currency: "CAD" },
+      { id: 5, service_id: 2, duration_minutes: 45, price: 85.0, currency: "CAD" },
+      { id: 6, service_id: 2, duration_minutes: 60, price: 110.0, currency: "CAD" },
+      { id: 7, service_id: 3, duration_minutes: 30, price: 75.0, currency: "CAD" },
+      { id: 8, service_id: 3, duration_minutes: 45, price: 105.0, currency: "CAD" },
+      { id: 9, service_id: 3, duration_minutes: 60, price: 135.0, currency: "CAD" },
+      { id: 10, service_id: 4, duration_minutes: 30, price: 80.0, currency: "CAD" },
+      { id: 11, service_id: 4, duration_minutes: 45, price: 110.0, currency: "CAD" },
+      { id: 12, service_id: 4, duration_minutes: 60, price: 140.0, currency: "CAD" },
+    ],
+    bookings: [],
+    timeBlocks: [],
+    settings: {
+      clinic_start_time: "10:00",
+      clinic_end_time: "20:00",
+    },
+    holidays: [],
+    nextBookingId: 101,
+    nextBlockId: 201,
+    nextHolidayId: 1,
+    nextServiceId: 5,
+    nextTierId: 13,
+  };
+}
+
+function initSharedStore(): ClinicStore {
+  try {
+    if (fs.existsSync(DATA_FILE)) {
+      const raw = fs.readFileSync(DATA_FILE, "utf-8");
+      const data = JSON.parse(raw);
+      // Rehydrate Dates
+      data.bookings = (data.bookings || []).map((b: any) => ({
+        ...b,
+        start_time: new Date(b.start_time),
+        end_time: new Date(b.end_time),
+        created_at: new Date(b.created_at || Date.now()),
+      }));
+      data.timeBlocks = (data.timeBlocks || []).map((b: any) => ({
+        ...b,
+        start_time: new Date(b.start_time),
+        end_time: new Date(b.end_time),
+      }));
+      data.services = (data.services || []).map((s: any) => ({
+        ...s,
+        created_at: new Date(s.created_at || Date.now()),
+      }));
+      return data;
+    }
+  } catch (err) {
+    console.warn("[DataStore] Could not read existing data file, initializing fresh store:", err);
+  }
+
+  const def = getDefaultStore();
+  saveStoreToDisk(def);
+  return def;
+}
+
+export function saveStoreToDisk(store: ClinicStore): void {
+  try {
+    if (!fs.existsSync(DATA_DIR)) {
+      fs.mkdirSync(DATA_DIR, { recursive: true });
+    }
+    fs.writeFileSync(DATA_FILE, JSON.stringify(store, null, 2), "utf-8");
+  } catch (err) {
+    console.warn("[DataStore] Notice: Disk write skipped or read-only filesystem:", err);
+  }
+}
+
+// Attach to globalThis to preserve across Next.js route bundling in production/dev
+const g = globalThis as any;
+if (!g.__yyc_memDb) {
+  g.__yyc_memDb = initSharedStore();
+}
+const memDb: ClinicStore = g.__yyc_memDb;
+
+export function persistStore(): void {
+  saveStoreToDisk(memDb);
+}
 
 /**
  * Checks connectivity to MariaDB
@@ -306,7 +389,7 @@ export async function createBookingWithLock(params: {
   startTime: Date;
   endTime: Date;
   totalPrice: number;
-}): Promise<{ success: boolean; bookingId?: number; conflict?: boolean; error?: string }> {
+}): Promise<{ success: boolean; bookingId?: number; referenceNumber?: string; conflict?: boolean; error?: string }> {
   const isLive = await checkMariaDbConnection();
 
   if (isLive) {
@@ -331,11 +414,16 @@ export async function createBookingWithLock(params: {
         return { success: false, conflict: true, error: "Slot was just taken, please select another time" };
       }
 
+      const referenceNumber = generateUniqueReference();
+      try {
+        await conn.query("ALTER TABLE bookings ADD COLUMN IF NOT EXISTS reference_code VARCHAR(50) NULL");
+      } catch {}
+
       // Insert into bookings
       const [bookingResult] = await conn.query<any>(
         `INSERT INTO bookings 
-         (service_tier_id, client_name, client_email, client_phone, client_address, start_time, end_time, total_price, status)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'CONFIRMED')`,
+         (service_tier_id, client_name, client_email, client_phone, client_address, start_time, end_time, total_price, status, reference_code)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'CONFIRMED', ?)`,
         [
           params.serviceTierId,
           params.clientName,
@@ -345,6 +433,7 @@ export async function createBookingWithLock(params: {
           sqlStart,
           sqlEnd,
           params.totalPrice,
+          referenceNumber,
         ]
       );
 
@@ -355,11 +444,11 @@ export async function createBookingWithLock(params: {
         `INSERT INTO time_blocks 
          (start_time, end_time, block_type, reason, booking_id)
          VALUES (?, ?, 'BOOKED', ?, ?)`,
-        [sqlStart, sqlEnd, `Client booking: ${params.clientName}`, bookingId]
+        [sqlStart, sqlEnd, `Client booking: ${params.clientName} [Ref: ${referenceNumber}]`, bookingId]
       );
 
       await conn.commit();
-      return { success: true, bookingId };
+      return { success: true, bookingId, referenceNumber };
     } catch (err: any) {
       await conn.rollback();
       console.error("[MariaDB Transaction Error]", err);
@@ -381,9 +470,11 @@ export async function createBookingWithLock(params: {
     return { success: false, conflict: true, error: "Slot was just taken, please select another time" };
   }
 
+  const referenceNumber = generateUniqueReference();
   const bookingId = memDb.nextBookingId++;
   const booking: MemBooking = {
     id: bookingId,
+    reference_number: referenceNumber,
     service_tier_id: params.serviceTierId,
     client_name: params.clientName,
     client_email: params.clientEmail,
@@ -395,18 +486,19 @@ export async function createBookingWithLock(params: {
     status: "CONFIRMED",
     created_at: new Date(),
   };
-  memDb.bookings.push(booking);
+  memDb.bookings.unshift(booking);
 
   memDb.timeBlocks.push({
     id: memDb.nextBlockId++,
     start_time: params.startTime,
     end_time: params.endTime,
     block_type: "BOOKED",
-    reason: `Client booking: ${params.clientName}`,
+    reason: `Client booking: ${params.clientName} [Ref: ${referenceNumber}]`,
     booking_id: bookingId,
   });
 
-  return { success: true, bookingId };
+  persistStore();
+  return { success: true, bookingId, referenceNumber };
 }
 
 /**
@@ -442,6 +534,7 @@ export async function addPractitionerBlock(params: {
     reason,
     booking_id: null,
   });
+  persistStore();
   return { id };
 }
 
@@ -459,6 +552,7 @@ export async function deletePractitionerBlock(blockId: number): Promise<boolean>
   const idx = memDb.timeBlocks.findIndex((b) => b.id === blockId && b.block_type === "BLOCKED");
   if (idx !== -1) {
     memDb.timeBlocks.splice(idx, 1);
+    persistStore();
     return true;
   }
   return false;
@@ -513,6 +607,7 @@ export async function getAllBookings(): Promise<any[]> {
     const [rows] = await p.query<any[]>(
       `SELECT b.id, b.client_name, b.client_email, b.client_phone, b.client_address,
               b.start_time, b.end_time, b.total_price, b.status, b.cancellation_reason,
+              COALESCE(b.reference_code, CONCAT('YYC-', LPAD(b.id, 6, '0'))) as reference_number,
               s.name as service_name, t.duration_minutes, t.currency
        FROM bookings b
        JOIN service_tiers t ON b.service_tier_id = t.id
@@ -521,6 +616,7 @@ export async function getAllBookings(): Promise<any[]> {
     );
     return rows.map((r) => ({
       id: r.id,
+      referenceNumber: r.reference_number || `YYC-${String(r.id).padStart(6, "0")}`,
       clientName: r.client_name,
       clientEmail: r.client_email,
       clientPhone: r.client_phone,
@@ -541,6 +637,7 @@ export async function getAllBookings(): Promise<any[]> {
     const service = tier ? memDb.services.find((s) => s.id === tier.service_id) : null;
     return {
       id: b.id,
+      referenceNumber: b.reference_number || `YYC-${String(b.id).padStart(6, "0")}`,
       clientName: b.client_name,
       clientEmail: b.client_email,
       clientPhone: b.client_phone,
@@ -639,6 +736,8 @@ export async function cancelBooking(
     memDb.timeBlocks.splice(blockIdx, 1);
   }
 
+  persistStore();
+
   const tier = memDb.serviceTiers.find((t) => t.id === booking.service_tier_id);
   const service = tier ? memDb.services.find((s) => s.id === tier.service_id) : null;
 
@@ -675,6 +774,7 @@ export async function updateServiceTierPrice(tierId: number, price: number): Pro
   const tier = memDb.serviceTiers.find((t) => t.id === tierId);
   if (tier) {
     tier.price = price;
+    persistStore();
     return true;
   }
   return false;
@@ -705,6 +805,7 @@ export async function createService(params: {
     is_active: true,
     created_at: new Date(),
   });
+  persistStore();
   return { id };
 }
 
@@ -723,6 +824,7 @@ export async function deleteService(serviceId: number): Promise<boolean> {
   if (idx !== -1) {
     memDb.services.splice(idx, 1);
     memDb.serviceTiers = memDb.serviceTiers.filter((t) => t.service_id !== serviceId);
+    persistStore();
     return true;
   }
   return false;
@@ -755,6 +857,7 @@ export async function addServiceTier(params: {
   );
   if (existing) {
     existing.price = params.price;
+    persistStore();
     return { id: existing.id };
   }
 
@@ -766,6 +869,7 @@ export async function addServiceTier(params: {
     price: params.price,
     currency,
   });
+  persistStore();
   return { id };
 }
 
@@ -783,6 +887,7 @@ export async function deleteServiceTier(tierId: number): Promise<boolean> {
   const idx = memDb.serviceTiers.findIndex((t) => t.id === tierId);
   if (idx !== -1) {
     memDb.serviceTiers.splice(idx, 1);
+    persistStore();
     return true;
   }
   return false;
@@ -830,6 +935,7 @@ export async function updateClinicSettings(startTime: string, endTime: string): 
 
   memDb.settings.clinic_start_time = startTime;
   memDb.settings.clinic_end_time = endTime;
+  persistStore();
   return true;
 }
 
@@ -874,6 +980,7 @@ export async function addClinicHoliday(holidayDate: string, name: string): Promi
 
   const id = memDb.nextHolidayId++;
   memDb.holidays.push({ id, holiday_date: holidayDate, name });
+  persistStore();
   return { id };
 }
 
@@ -891,6 +998,7 @@ export async function deleteClinicHoliday(holidayId: number): Promise<boolean> {
   const idx = memDb.holidays.findIndex((h) => h.id === holidayId);
   if (idx !== -1) {
     memDb.holidays.splice(idx, 1);
+    persistStore();
     return true;
   }
   return false;

@@ -99,7 +99,9 @@ export default function BookingAdminPage() {
     setLoading(true);
     try {
       const headers: Record<string, string> = {};
-      if (token) headers["x-admin-token"] = token;
+      const activeToken =
+        token || (typeof window !== "undefined" ? localStorage.getItem("yyc_admin_token") : null) || "";
+      if (activeToken) headers["x-admin-token"] = activeToken;
 
       const [servRes, blockRes, apptRes, settRes, holRes] = await Promise.all([
         fetch("/api/booking/admin/services", { headers }),
@@ -109,7 +111,7 @@ export default function BookingAdminPage() {
         fetch("/api/booking/admin/holidays", { headers }),
       ]);
 
-      if (servRes.status === 401 || blockRes.status === 401) {
+      if (servRes.status === 401 || blockRes.status === 401 || apptRes.status === 401) {
         setIsAuthenticated(false);
         localStorage.removeItem("yyc_admin_token");
         return;
@@ -650,59 +652,86 @@ export default function BookingAdminPage() {
         <div className="animate-fade-in">
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
             <div>
-              <h2 style={{ fontSize: 18, fontWeight: 700 }}>Confirmed Patient Bookings</h2>
-              <p style={{ fontSize: 13, color: "var(--text-secondary)" }}>
+              <h2 style={{ fontSize: 18, fontWeight: 700, color: "#1e293b" }}>Confirmed Patient Bookings</h2>
+              <p style={{ fontSize: 13, color: "#64748b" }}>
                 View client intake details and manage appointment cancellations with automated mail alerts.
               </p>
             </div>
           </div>
 
           {appointments.length === 0 ? (
-            <div style={{ textAlign: "center", padding: "60px 20px", background: "rgba(15, 23, 42, 0.6)", borderRadius: "var(--radius-lg)", border: "1px dashed var(--border-subtle)" }}>
-              <UserCheck size={36} style={{ margin: "0 auto 12px", opacity: 0.5, color: "var(--accent-teal)" }} />
-              <h3 style={{ fontSize: 16, color: "#fff", marginBottom: 4 }}>No Bookings Yet</h3>
-              <p style={{ fontSize: 13, color: "var(--text-muted)", maxWidth: 360, margin: "0 auto" }}>
+            <div style={{ textAlign: "center", padding: "60px 20px", background: "#ffffff", borderRadius: 12, border: "1px dashed #cbd5e1" }}>
+              <UserCheck size={36} style={{ margin: "0 auto 12px", opacity: 0.7, color: "#689f38" }} />
+              <h3 style={{ fontSize: 16, color: "#1e293b", marginBottom: 4, fontWeight: 700 }}>No Bookings Yet</h3>
+              <p style={{ fontSize: 13, color: "#64748b", maxWidth: 360, margin: "0 auto" }}>
                 Appointments booked through the client modal will appear here in real-time.
               </p>
             </div>
           ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
               {appointments.map((appt) => {
                 const isCancelled = appt.status === "CANCELLED";
                 const sDate = new Date(appt.startTime);
+                const refCode = appt.referenceNumber || `#${appt.id}`;
 
                 return (
-                  <div key={appt.id} style={{ background: isCancelled ? "rgba(244, 63, 94, 0.04)" : "rgba(15, 23, 42, 0.7)", border: `1px solid ${isCancelled ? "rgba(244, 63, 94, 0.2)" : "var(--border-subtle)"}`, borderRadius: "var(--radius-md)", padding: "20px 24px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 20 }}>
+                  <div
+                    key={appt.id}
+                    style={{
+                      background: isCancelled ? "#fff1f2" : "#ffffff",
+                      border: `1px solid ${isCancelled ? "#fecdd3" : "#e2e8f0"}`,
+                      borderRadius: 12,
+                      padding: "20px 24px",
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      gap: 20,
+                      boxShadow: "0 1px 3px rgba(0,0,0,0.03)"
+                    }}
+                  >
                     <div>
-                      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
-                        <span style={{ fontSize: 15, fontWeight: 700, color: "#fff" }}>
-                          #{appt.id} • {appt.clientName}
+                      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+                        <span style={{ fontSize: 12, fontWeight: 800, padding: "3px 10px", borderRadius: 6, background: "#f1f5f9", color: "#0f172a", border: "1px solid #cbd5e1", letterSpacing: 0.5 }}>
+                          Ref: {refCode}
                         </span>
-                        <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 12, background: isCancelled ? "rgba(244, 63, 94, 0.2)" : "rgba(20, 184, 166, 0.2)", color: isCancelled ? "#fb7185" : "var(--accent-teal-glow)" }}>
+                        <span style={{ fontSize: 16, fontWeight: 700, color: "#1e293b" }}>
+                          {appt.clientName}
+                        </span>
+                        <span
+                          style={{
+                            fontSize: 11,
+                            fontWeight: 700,
+                            padding: "3px 10px",
+                            borderRadius: 12,
+                            background: isCancelled ? "#fee2e2" : "#dcfce7",
+                            color: isCancelled ? "#b91c1c" : "#15803d",
+                            border: `1px solid ${isCancelled ? "#fca5a5" : "#bbf7d0"}`
+                          }}
+                        >
                           {appt.status}
                         </span>
                       </div>
 
-                      <div style={{ fontSize: 13, color: "var(--text-secondary)", display: "flex", flexWrap: "wrap", gap: 16 }}>
+                      <div style={{ fontSize: 13, color: "#475569", display: "flex", flexWrap: "wrap", gap: 16 }}>
                         <span>
-                          <strong>Service:</strong> {appt.serviceName} ({appt.durationMinutes}m)
+                          <strong style={{ color: "#1e293b" }}>Service:</strong> {appt.serviceName} ({appt.durationMinutes}m)
                         </span>
                         <span>
-                          <strong>Slot:</strong> {format(sDate, "EEE, MMM d, yyyy")} at {format(sDate, "h:mm a")} MT
+                          <strong style={{ color: "#1e293b" }}>Date & Time:</strong> {format(sDate, "EEE, MMM d, yyyy")} at {format(sDate, "h:mm a")} MT
                         </span>
                         <span>
-                          <strong>Fee:</strong> ${Number(appt.totalPrice).toFixed(2)} {appt.currency}
+                          <strong style={{ color: "#1e293b" }}>Fee:</strong> ${Number(appt.totalPrice).toFixed(2)} {appt.currency}
                         </span>
                       </div>
 
-                      <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 6, display: "flex", gap: 16 }}>
-                        <span>Email: {appt.clientEmail}</span>
-                        <span>Phone: {appt.clientPhone}</span>
-                        <span>Address: {appt.clientAddress}</span>
+                      <div style={{ fontSize: 12, color: "#64748b", marginTop: 8, display: "flex", flexWrap: "wrap", gap: 16 }}>
+                        <span>📧 {appt.clientEmail}</span>
+                        <span>📞 {appt.clientPhone}</span>
+                        <span>📍 {appt.clientAddress}</span>
                       </div>
 
                       {isCancelled && appt.cancellationReason && (
-                        <div style={{ marginTop: 10, fontSize: 12, color: "#fb7185", background: "rgba(244, 63, 94, 0.08)", padding: "6px 12px", borderRadius: 6 }}>
+                        <div style={{ marginTop: 10, fontSize: 12, color: "#b91c1c", background: "#fee2e2", border: "1px solid #fca5a5", padding: "6px 12px", borderRadius: 6 }}>
                           Cancellation Reason: {appt.cancellationReason}
                         </div>
                       )}
@@ -716,7 +745,19 @@ export default function BookingAdminPage() {
                             setCancellingBookingId(appt.id);
                             setCancelReason("Practitioner schedule conflict");
                           }}
-                          style={{ padding: "8px 16px", borderRadius: 8, background: "rgba(244, 63, 94, 0.12)", border: "1px solid rgba(244, 63, 94, 0.3)", color: "#fb7185", fontSize: 13, fontWeight: 600, display: "inline-flex", alignItems: "center", gap: 6, cursor: "pointer" }}
+                          style={{
+                            padding: "8px 16px",
+                            borderRadius: 8,
+                            background: "#fff1f2",
+                            border: "1px solid #fecdd3",
+                            color: "#e11d48",
+                            fontSize: 13,
+                            fontWeight: 600,
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 6,
+                            cursor: "pointer"
+                          }}
                           id={`cancel-booking-btn-${appt.id}`}
                         >
                           <XCircle size={14} />

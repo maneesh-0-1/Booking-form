@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { ServiceTierSelector, Tier } from "./ServiceTierSelector";
 import { TimeSlotPicker } from "./TimeSlotPicker";
-import { AvailableSlot } from "@/lib/timezone";
+import { AvailableSlot, getLocalTodayDateString } from "@/lib/timezone";
 
 export interface ServiceItem {
   id: number;
@@ -83,8 +83,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
 
     if (isOpen) {
       loadServices();
-      const now = new Date();
-      const todayStr = now.toISOString().split("T")[0];
+      const todayStr = getLocalTodayDateString();
       setSelectedDate(todayStr);
     }
   }, [isOpen]);
@@ -317,14 +316,14 @@ export const BookingModal: React.FC<BookingModalProps> = ({
               </div>
               <h3 className={styles.successTitle}>Appointment Confirmed!</h3>
               <p className={styles.successDesc}>
-                Reference <strong>#{confirmedBooking.id}</strong> has been secured in the clinic schedule.
+                Reference <strong style={{ color: "#166534" }}>{confirmedBooking.referenceNumber || `#${confirmedBooking.id}`}</strong> has been secured in the clinic schedule.
                 Confirmation details have been emailed directly to <strong>{confirmedBooking.clientEmail}</strong>.
               </p>
 
               <div
                 style={{
-                  background: "rgba(255, 255, 255, 0.04)",
-                  border: "1px solid var(--border-subtle)",
+                  background: "#ffffff",
+                  border: "1px solid #e2e8f0",
                   borderRadius: 12,
                   padding: 20,
                   width: "100%",
@@ -332,19 +331,26 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                   marginBottom: 24,
                   textAlign: "left",
                   fontSize: 13,
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
                 }}
               >
-                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
-                  <span style={{ color: "var(--text-muted)" }}>Service:</span>
-                  <span style={{ fontWeight: 600 }}>{confirmedBooking.serviceName}</span>
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10, paddingBottom: 8, borderBottom: "1px solid #f1f5f9" }}>
+                  <span style={{ color: "#64748b", fontWeight: 600 }}>Appointment Reference:</span>
+                  <span style={{ fontWeight: 800, color: "#15803d", letterSpacing: "0.5px", fontSize: 14 }}>
+                    {confirmedBooking.referenceNumber || `#${confirmedBooking.id}`}
+                  </span>
                 </div>
                 <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
-                  <span style={{ color: "var(--text-muted)" }}>Duration:</span>
-                  <span>{confirmedBooking.durationMinutes} Minutes</span>
+                  <span style={{ color: "#64748b" }}>Service:</span>
+                  <span style={{ fontWeight: 600, color: "#1e293b" }}>{confirmedBooking.serviceName}</span>
                 </div>
                 <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
-                  <span style={{ color: "var(--text-muted)" }}>Date & Time:</span>
-                  <span style={{ fontWeight: 600, color: "var(--accent-teal-glow)" }}>
+                  <span style={{ color: "#64748b" }}>Duration:</span>
+                  <span style={{ color: "#1e293b" }}>{confirmedBooking.durationMinutes} Minutes</span>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
+                  <span style={{ color: "#64748b" }}>Date & Time:</span>
+                  <span style={{ fontWeight: 600, color: "#1e293b" }}>
                     {new Date(confirmedBooking.startTime).toLocaleDateString("en-US", {
                       weekday: "short",
                       month: "short",
@@ -360,8 +366,8 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                   </span>
                 </div>
                 <div style={{ display: "flex", justifyContent: "space-between" }}>
-                  <span style={{ color: "var(--text-muted)" }}>Clinic Address:</span>
-                  <span style={{ textAlign: "right", maxWidth: 220 }}>10880 Hidden Valley DR NW Calgary</span>
+                  <span style={{ color: "#64748b" }}>Clinic Address:</span>
+                  <span style={{ textAlign: "right", maxWidth: 220, color: "#1e293b" }}>10880 Hidden Valley DR NW Calgary</span>
                 </div>
               </div>
 

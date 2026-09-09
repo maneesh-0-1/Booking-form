@@ -80,10 +80,12 @@ export async function POST(req: NextRequest) {
     }
 
     const bookingId = reserveResult.bookingId;
+    const referenceNumber = reserveResult.referenceNumber || `YYC-${String(bookingId).padStart(6, "0")}`;
 
-    // Asynchronous notification offload (never blocks client response)
+    // Prepare email notification payload
     const emailData = {
       bookingId,
+      referenceNumber,
       serviceName: tier.serviceName,
       durationMinutes: tier.durationMinutes,
       totalPrice: tier.price,
@@ -96,16 +98,19 @@ export async function POST(req: NextRequest) {
       endTime,
     };
 
-    // Fire and forget
-    sendBookingNotifications(emailData).catch((err) => {
-      console.error("[Async Mailer Error]", err);
-    });
+    // Await email delivery over SMTP so serverless / Node does not freeze background promise
+    try {
+      await sendBookingNotifications(emailData);
+    } catch (err) {
+      console.error("[Reserve Mailer Error]", err);
+    }
 
     return NextResponse.json(
       {
         success: true,
         booking: {
           id: bookingId,
+          referenceNumber,
           serviceName: tier.serviceName,
           durationMinutes: tier.durationMinutes,
           totalPrice: tier.price,

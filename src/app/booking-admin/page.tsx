@@ -35,21 +35,59 @@ export default function BookingAdminPage() {
   const [usernameInput, setUsernameInput] = useState<string>("");
   const [passwordInput, setPasswordInput] = useState<string>("");
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [isAuthChecking, setIsAuthChecking] = useState<boolean>(true);
   const [authError, setAuthError] = useState<string | null>(null);
 
   // Active Tab
   const [activeTab, setActiveTab] = useState<"appointments" | "schedule" | "services" | "settings">("appointments");
 
-  // Data states
-  const [services, setServices] = useState<ServiceItem[]>([]);
-  const [blocks, setBlocks] = useState<TimeBlockItem[]>([]);
-  const [appointments, setAppointments] = useState<any[]>([]);
-  const [workingHours, setWorkingHours] = useState<{ startTime: string; endTime: string }>({
-    startTime: "09:00",
-    endTime: "18:00",
+  // Data states with instant SWR rehydration to eliminate vanishing on page refresh
+  const [services, setServices] = useState<ServiceItem[]>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const cached = sessionStorage.getItem("yyc_cached_services");
+        if (cached) return JSON.parse(cached);
+      } catch {}
+    }
+    return [];
   });
-  const [holidays, setHolidays] = useState<{ id: number; holidayDate: string; name: string }[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [blocks, setBlocks] = useState<TimeBlockItem[]>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const cached = sessionStorage.getItem("yyc_cached_blocks");
+        if (cached) return JSON.parse(cached);
+      } catch {}
+    }
+    return [];
+  });
+  const [appointments, setAppointments] = useState<any[]>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const cached = sessionStorage.getItem("yyc_cached_appts");
+        if (cached) return JSON.parse(cached);
+      } catch {}
+    }
+    return [];
+  });
+  const [workingHours, setWorkingHours] = useState<{ startTime: string; endTime: string }>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const cached = sessionStorage.getItem("yyc_cached_settings");
+        if (cached) return JSON.parse(cached);
+      } catch {}
+    }
+    return { startTime: "09:00", endTime: "18:00" };
+  });
+  const [holidays, setHolidays] = useState<{ id: number; holidayDate: string; name: string }[]>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const cached = sessionStorage.getItem("yyc_cached_holidays");
+        if (cached) return JSON.parse(cached);
+      } catch {}
+    }
+    return [];
+  });
+  const [loading, setLoading] = useState<boolean>(false);
 
   // Modals & Forms State
   const [isQuickBlockOpen, setIsQuickBlockOpen] = useState<boolean>(false);
@@ -103,6 +141,7 @@ export default function BookingAdminPage() {
       setToken(savedToken);
       setIsAuthenticated(true);
     }
+    setIsAuthChecking(false);
   }, []);
 
   const fetchData = async () => {
@@ -135,15 +174,28 @@ export default function BookingAdminPage() {
       const settData = await settRes.json().catch(() => ({ success: false }));
       const holData = await holRes.json().catch(() => ({ success: false }));
 
-      if (servData.success) setServices(servData.services || []);
-      if (blockData.success) setBlocks(blockData.blocks || []);
-      if (apptData.success) setAppointments(apptData.bookings || []);
+      if (servData.success && Array.isArray(servData.services)) {
+        setServices(servData.services);
+        try { sessionStorage.setItem("yyc_cached_services", JSON.stringify(servData.services)); } catch {}
+      }
+      if (blockData.success && Array.isArray(blockData.blocks)) {
+        setBlocks(blockData.blocks);
+        try { sessionStorage.setItem("yyc_cached_blocks", JSON.stringify(blockData.blocks)); } catch {}
+      }
+      if (apptData.success && Array.isArray(apptData.bookings)) {
+        setAppointments(apptData.bookings);
+        try { sessionStorage.setItem("yyc_cached_appts", JSON.stringify(apptData.bookings)); } catch {}
+      }
       if (settData.success && settData.settings) {
         setWorkingHours(settData.settings);
         setStartHourInput(settData.settings.startTime);
         setEndHourInput(settData.settings.endTime);
+        try { sessionStorage.setItem("yyc_cached_settings", JSON.stringify(settData.settings)); } catch {}
       }
-      if (holData.success) setHolidays(holData.holidays || []);
+      if (holData.success && Array.isArray(holData.holidays)) {
+        setHolidays(holData.holidays);
+        try { sessionStorage.setItem("yyc_cached_holidays", JSON.stringify(holData.holidays)); } catch {}
+      }
     } catch (err) {
       console.error("Error fetching admin data", err);
     } finally {
@@ -444,6 +496,15 @@ export default function BookingAdminPage() {
     }
   };
 
+  // If checking authentication state on mount, show clean background loading
+  if (isAuthChecking) {
+    return (
+      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#f8fafc" }}>
+        <Loader2 size={32} className="spinner" style={{ color: "#689f38" }} />
+      </div>
+    );
+  }
+
   // If unauthenticated: Login Gate
   if (!isAuthenticated) {
     return (
@@ -672,13 +733,23 @@ export default function BookingAdminPage() {
           </div>
 
           {appointments.length === 0 ? (
-            <div style={{ textAlign: "center", padding: "60px 20px", background: "#ffffff", borderRadius: 12, border: "1px dashed #cbd5e1" }}>
-              <UserCheck size={36} style={{ margin: "0 auto 12px", opacity: 0.7, color: "#689f38" }} />
-              <h3 style={{ fontSize: 16, color: "#1e293b", marginBottom: 4, fontWeight: 700 }}>No Bookings Yet</h3>
-              <p style={{ fontSize: 13, color: "#64748b", maxWidth: 360, margin: "0 auto" }}>
-                Appointments booked through the client modal will appear here in real-time.
-              </p>
-            </div>
+            loading ? (
+              <div style={{ textAlign: "center", padding: "60px 20px", background: "#ffffff", borderRadius: 12, border: "1px dashed #cbd5e1" }}>
+                <Loader2 size={36} className="spinner" style={{ margin: "0 auto 12px", color: "#689f38" }} />
+                <h3 style={{ fontSize: 16, color: "#1e293b", marginBottom: 4, fontWeight: 700 }}>Loading Bookings...</h3>
+                <p style={{ fontSize: 13, color: "#64748b", maxWidth: 360, margin: "0 auto" }}>
+                  Synchronizing confirmed patient appointments from clinic database.
+                </p>
+              </div>
+            ) : (
+              <div style={{ textAlign: "center", padding: "60px 20px", background: "#ffffff", borderRadius: 12, border: "1px dashed #cbd5e1" }}>
+                <UserCheck size={36} style={{ margin: "0 auto 12px", opacity: 0.7, color: "#689f38" }} />
+                <h3 style={{ fontSize: 16, color: "#1e293b", marginBottom: 4, fontWeight: 700 }}>No Bookings Yet</h3>
+                <p style={{ fontSize: 13, color: "#64748b", maxWidth: 360, margin: "0 auto" }}>
+                  Appointments booked through the client modal will appear here in real-time.
+                </p>
+              </div>
+            )
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
               {appointments.map((appt) => {

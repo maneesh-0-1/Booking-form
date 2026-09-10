@@ -222,8 +222,8 @@ export function persistStore(): void {
  * Checks connectivity to MariaDB
  */
 export async function checkMariaDbConnection(): Promise<boolean> {
-  // If zero-database mode is enabled, immediately bypass database socket
-  if (process.env.ENABLE_DATABASE === "false" || !process.env.DB_HOST) {
+  // If zero-database mode is active (ENABLE_DATABASE is not explicitly 'true'), immediately bypass DB socket
+  if (process.env.ENABLE_DATABASE !== "true" || !process.env.DB_HOST) {
     return false;
   }
 

@@ -42,7 +42,7 @@ interface MemService {
   name: string;
   description: string | null;
   is_active: boolean;
-  created_at: Date;
+  created_at: Date | string;
 }
 
 interface MemServiceTier {
@@ -61,18 +61,18 @@ interface MemBooking {
   client_email: string;
   client_phone: string;
   client_address: string;
-  start_time: Date;
-  end_time: Date;
+  start_time: Date | string;
+  end_time: Date | string;
   total_price: number;
   status: "CONFIRMED" | "CANCELLED";
   cancellation_reason?: string | null;
-  created_at: Date;
+  created_at: Date | string;
 }
 
 interface MemTimeBlock {
   id: number;
-  start_time: Date;
-  end_time: Date;
+  start_time: Date | string;
+  end_time: Date | string;
   block_type: "BOOKED" | "BLOCKED";
   reason: string | null;
   booking_id: number | null;
@@ -112,28 +112,28 @@ function getDefaultStore(): ClinicStore {
         name: "Foot Reflexology Therapy",
         description: "Targeted stimulation of neurological reflex zones in feet to restore equilibrium, relieve tension, and enhance circulation.",
         is_active: true,
-        created_at: new Date(),
+        created_at: new Date().toISOString(),
       },
       {
         id: 2,
         name: "Hand & Palm Reflexology",
         description: "Precision pressure technique on neuromuscular zones of the palms and fingers to relieve repetitive strain and upper body stress.",
         is_active: true,
-        created_at: new Date(),
+        created_at: new Date().toISOString(),
       },
       {
         id: 3,
         name: "Combined Integrated Reflexology",
         description: "Comprehensive therapeutic dual-treatment focusing on both foot and hand meridian points for full autonomic nervous balance.",
         is_active: true,
-        created_at: new Date(),
+        created_at: new Date().toISOString(),
       },
       {
         id: 4,
         name: "Deep Meridian Clinical Care",
         description: "Specialized therapeutic focus addressing persistent structural fatigue, chronic inflammation, and plantar fascial tension.",
         is_active: true,
-        created_at: new Date(),
+        created_at: new Date().toISOString(),
       },
     ],
     serviceTiers: [
@@ -153,8 +153,8 @@ function getDefaultStore(): ClinicStore {
     bookings: [],
     timeBlocks: [],
     settings: {
-      clinic_start_time: "10:00",
-      clinic_end_time: "20:00",
+      clinic_start_time: "09:00",
+      clinic_end_time: "18:00",
     },
     holidays: [],
     nextBookingId: 101,
@@ -165,36 +165,36 @@ function getDefaultStore(): ClinicStore {
   };
 }
 
-function initSharedStore(): ClinicStore {
+let cachedStore: ClinicStore | null = null;
+let lastFileMtime: number = 0;
+
+export function getStore(): ClinicStore {
   try {
     if (fs.existsSync(DATA_FILE)) {
-      const raw = fs.readFileSync(DATA_FILE, "utf-8");
-      const data = JSON.parse(raw);
-      // Rehydrate Dates
-      data.bookings = (data.bookings || []).map((b: any) => ({
-        ...b,
-        start_time: new Date(b.start_time),
-        end_time: new Date(b.end_time),
-        created_at: new Date(b.created_at || Date.now()),
-      }));
-      data.timeBlocks = (data.timeBlocks || []).map((b: any) => ({
-        ...b,
-        start_time: new Date(b.start_time),
-        end_time: new Date(b.end_time),
-      }));
-      data.services = (data.services || []).map((s: any) => ({
-        ...s,
-        created_at: new Date(s.created_at || Date.now()),
-      }));
-      return data;
+      const stat = fs.statSync(DATA_FILE);
+      if (!cachedStore || stat.mtimeMs > lastFileMtime) {
+        const raw = fs.readFileSync(DATA_FILE, "utf-8");
+        const data = JSON.parse(raw);
+        data.bookings = data.bookings || [];
+        data.timeBlocks = data.timeBlocks || [];
+        data.services = data.services || [];
+        data.serviceTiers = data.serviceTiers || [];
+        data.holidays = data.holidays || [];
+        data.settings = data.settings || { clinic_start_time: "09:00", clinic_end_time: "18:00" };
+        cachedStore = data;
+        lastFileMtime = stat.mtimeMs;
+      }
+      return cachedStore!;
     }
   } catch (err) {
-    console.warn("[DataStore] Could not read existing data file, initializing fresh store:", err);
+    console.warn("[DataStore] Error reading store from disk:", err);
   }
 
-  const def = getDefaultStore();
-  saveStoreToDisk(def);
-  return def;
+  if (!cachedStore) {
+    cachedStore = getDefaultStore();
+    saveStoreToDisk(cachedStore);
+  }
+  return cachedStore;
 }
 
 export function saveStoreToDisk(store: ClinicStore): void {
@@ -203,20 +203,19 @@ export function saveStoreToDisk(store: ClinicStore): void {
       fs.mkdirSync(DATA_DIR, { recursive: true });
     }
     fs.writeFileSync(DATA_FILE, JSON.stringify(store, null, 2), "utf-8");
+    try {
+      const stat = fs.statSync(DATA_FILE);
+      lastFileMtime = stat.mtimeMs;
+    } catch {}
+    cachedStore = store;
   } catch (err) {
     console.warn("[DataStore] Notice: Disk write skipped or read-only filesystem:", err);
   }
 }
 
-// Attach to globalThis to preserve across Next.js route bundling in production/dev
-const g = globalThis as any;
-if (!g.__yyc_memDb) {
-  g.__yyc_memDb = initSharedStore();
-}
-const memDb: ClinicStore = g.__yyc_memDb;
-
 export function persistStore(): void {
-  saveStoreToDisk(memDb);
+  const store = getStore();
+  saveStoreToDisk(store);
 }
 
 /**
@@ -239,7 +238,7 @@ export async function checkMariaDbConnection(): Promise<boolean> {
     return true;
   } catch (err: any) {
     isMariaDbAvailable = false;
-    console.warn("[MariaDB] Host unavailable or credentials not configured. Engaging resilient memory adapter:", err.message);
+    console.warn("[MariaDB] Host unavailable or credentials not configured. Engaging resilient file store:", err.message);
     return false;
   }
 }
@@ -288,15 +287,15 @@ export async function getAllServicesWithTiers(): Promise<ServiceWithTiers[]> {
     }));
   }
 
-  // Memory Fallback
-  return memDb.services
+  const store = getStore();
+  return store.services
     .filter((s) => s.is_active)
     .map((s) => ({
       id: s.id,
       name: s.name,
       description: s.description,
       isActive: s.is_active,
-      tiers: memDb.serviceTiers
+      tiers: store.serviceTiers
         .filter((t) => t.service_id === s.id)
         .map((t) => ({
           id: t.id,
@@ -337,9 +336,10 @@ export async function getTierById(tierId: number): Promise<{
     };
   }
 
-  const tier = memDb.serviceTiers.find((t) => t.id === tierId);
+  const store = getStore();
+  const tier = store.serviceTiers.find((t) => t.id === tierId);
   if (!tier) return null;
-  const service = memDb.services.find((s) => s.id === tier.service_id);
+  const service = store.services.find((s) => s.id === tier.service_id);
   return {
     id: tier.id,
     serviceId: tier.service_id,
@@ -365,15 +365,16 @@ export async function getTimeBlocksForDate(requestedDate: string): Promise<{ sta
     }));
   }
 
-  return memDb.timeBlocks
+  const store = getStore();
+  return store.timeBlocks
     .filter((b) => {
       const bStartStr = formatToClinicDateStr(b.start_time);
       const bEndStr = formatToClinicDateStr(b.end_time);
       return bStartStr === requestedDate || bEndStr === requestedDate;
     })
     .map((b) => ({
-      start: new Date(b.start_time),
-      end: new Date(b.end_time),
+      start: parseClinicDateTime(b.start_time),
+      end: parseClinicDateTime(b.end_time),
     }));
 }
 
@@ -458,12 +459,15 @@ export async function createBookingWithLock(params: {
     }
   }
 
-  // Memory Fallback with strict conflict detection
+  // Persistent File-backed Store with strict conflict detection
+  const store = getStore();
   const startMs = params.startTime.getTime();
   const endMs = params.endTime.getTime();
 
-  const hasConflict = memDb.timeBlocks.some((b) => {
-    return b.start_time.getTime() < endMs && b.end_time.getTime() > startMs;
+  const hasConflict = store.timeBlocks.some((b) => {
+    const bStart = parseClinicDateTime(b.start_time).getTime();
+    const bEnd = parseClinicDateTime(b.end_time).getTime();
+    return bStart < endMs && bEnd > startMs;
   });
 
   if (hasConflict) {
@@ -471,7 +475,9 @@ export async function createBookingWithLock(params: {
   }
 
   const referenceNumber = generateUniqueReference();
-  const bookingId = memDb.nextBookingId++;
+  const bookingId = store.nextBookingId ? store.nextBookingId++ : 101;
+  const blockId = store.nextBlockId ? store.nextBlockId++ : 201;
+
   const booking: MemBooking = {
     id: bookingId,
     reference_number: referenceNumber,
@@ -480,24 +486,25 @@ export async function createBookingWithLock(params: {
     client_email: params.clientEmail,
     client_phone: params.clientPhone,
     client_address: params.clientAddress,
-    start_time: params.startTime,
-    end_time: params.endTime,
+    start_time: params.startTime.toISOString(),
+    end_time: params.endTime.toISOString(),
     total_price: params.totalPrice,
     status: "CONFIRMED",
-    created_at: new Date(),
+    created_at: new Date().toISOString(),
   };
-  memDb.bookings.unshift(booking);
 
-  memDb.timeBlocks.push({
-    id: memDb.nextBlockId++,
-    start_time: params.startTime,
-    end_time: params.endTime,
+  store.bookings.unshift(booking);
+
+  store.timeBlocks.push({
+    id: blockId,
+    start_time: params.startTime.toISOString(),
+    end_time: params.endTime.toISOString(),
     block_type: "BOOKED",
     reason: `Client booking: ${params.clientName} [Ref: ${referenceNumber}]`,
     booking_id: bookingId,
   });
 
-  persistStore();
+  saveStoreToDisk(store);
   return { success: true, bookingId, referenceNumber };
 }
 
@@ -525,16 +532,17 @@ export async function addPractitionerBlock(params: {
     return { id: res.insertId };
   }
 
-  const id = memDb.nextBlockId++;
-  memDb.timeBlocks.push({
+  const store = getStore();
+  const id = store.nextBlockId ? store.nextBlockId++ : 201;
+  store.timeBlocks.push({
     id,
-    start_time: params.startTime,
-    end_time: params.endTime,
+    start_time: params.startTime.toISOString(),
+    end_time: params.endTime.toISOString(),
     block_type: "BLOCKED",
     reason,
     booking_id: null,
   });
-  persistStore();
+  saveStoreToDisk(store);
   return { id };
 }
 
@@ -549,10 +557,11 @@ export async function deletePractitionerBlock(blockId: number): Promise<boolean>
     return res.affectedRows > 0;
   }
 
-  const idx = memDb.timeBlocks.findIndex((b) => b.id === blockId && b.block_type === "BLOCKED");
+  const store = getStore();
+  const idx = store.timeBlocks.findIndex((b) => b.id === blockId && b.block_type === "BLOCKED");
   if (idx !== -1) {
-    memDb.timeBlocks.splice(idx, 1);
-    persistStore();
+    store.timeBlocks.splice(idx, 1);
+    saveStoreToDisk(store);
     return true;
   }
   return false;
@@ -587,10 +596,11 @@ export async function getAllTimeBlocks(): Promise<{
     }));
   }
 
-  return memDb.timeBlocks.map((b) => ({
+  const store = getStore();
+  return store.timeBlocks.map((b) => ({
     id: b.id,
-    startTime: b.start_time.toISOString(),
-    endTime: b.end_time.toISOString(),
+    startTime: parseClinicDateTime(b.start_time).toISOString(),
+    endTime: parseClinicDateTime(b.end_time).toISOString(),
     blockType: b.block_type,
     reason: b.reason,
     bookingId: b.booking_id,
@@ -610,8 +620,8 @@ export async function getAllBookings(): Promise<any[]> {
               COALESCE(b.reference_code, CONCAT('YYC-', LPAD(b.id, 6, '0'))) as reference_number,
               s.name as service_name, t.duration_minutes, t.currency
        FROM bookings b
-       JOIN service_tiers t ON b.service_tier_id = t.id
-       JOIN services s ON t.service_id = s.id
+       LEFT JOIN service_tiers t ON b.service_tier_id = t.id
+       LEFT JOIN services s ON t.service_id = s.id
        ORDER BY b.start_time DESC`
     );
     return rows.map((r) => ({
@@ -626,15 +636,16 @@ export async function getAllBookings(): Promise<any[]> {
       totalPrice: Number(r.total_price),
       status: r.status,
       cancellationReason: r.cancellation_reason,
-      serviceName: r.service_name,
-      durationMinutes: Number(r.duration_minutes),
-      currency: r.currency,
+      serviceName: r.service_name || "Clinical Reflexology",
+      durationMinutes: Number(r.duration_minutes || 60),
+      currency: r.currency || "CAD",
     }));
   }
 
-  return memDb.bookings.map((b) => {
-    const tier = memDb.serviceTiers.find((t) => t.id === b.service_tier_id);
-    const service = tier ? memDb.services.find((s) => s.id === tier.service_id) : null;
+  const store = getStore();
+  return store.bookings.map((b) => {
+    const tier = store.serviceTiers.find((t) => t.id === b.service_tier_id);
+    const service = tier ? store.services.find((s) => s.id === tier.service_id) : null;
     return {
       id: b.id,
       referenceNumber: b.reference_number || `YYC-${String(b.id).padStart(6, "0")}`,
@@ -642,9 +653,9 @@ export async function getAllBookings(): Promise<any[]> {
       clientEmail: b.client_email,
       clientPhone: b.client_phone,
       clientAddress: b.client_address,
-      startTime: b.start_time.toISOString(),
-      endTime: b.end_time.toISOString(),
-      totalPrice: b.total_price,
+      startTime: parseClinicDateTime(b.start_time).toISOString(),
+      endTime: parseClinicDateTime(b.end_time).toISOString(),
+      totalPrice: Number(b.total_price),
       status: b.status,
       cancellationReason: b.cancellation_reason,
       serviceName: service ? service.name : "Clinical Reflexology",
@@ -673,8 +684,8 @@ export async function cancelBooking(
       const [rows] = await conn.query<any[]>(
         `SELECT b.*, s.name as service_name, t.duration_minutes, t.currency
          FROM bookings b
-         JOIN service_tiers t ON b.service_tier_id = t.id
-         JOIN services s ON t.service_id = s.id
+         LEFT JOIN service_tiers t ON b.service_tier_id = t.id
+         LEFT JOIN services s ON t.service_id = s.id
          WHERE b.id = ? FOR UPDATE`,
         [bookingId]
       );
@@ -700,10 +711,11 @@ export async function cancelBooking(
         success: true,
         booking: {
           id: booking.id,
-          serviceName: booking.service_name,
-          durationMinutes: Number(booking.duration_minutes),
+          referenceNumber: booking.reference_code || `YYC-${String(booking.id).padStart(6, "0")}`,
+          serviceName: booking.service_name || "Clinical Reflexology",
+          durationMinutes: Number(booking.duration_minutes || 60),
           totalPrice: Number(booking.total_price),
-          currency: booking.currency,
+          currency: booking.currency || "CAD",
           clientName: booking.client_name,
           clientEmail: booking.client_email,
           clientPhone: booking.client_phone,
@@ -721,8 +733,8 @@ export async function cancelBooking(
     }
   }
 
-  // Memory Fallback
-  const booking = memDb.bookings.find((b) => b.id === bookingId);
+  const store = getStore();
+  const booking = store.bookings.find((b) => b.id === bookingId);
   if (!booking) {
     return { success: false, error: "Booking not found" };
   }
@@ -731,30 +743,31 @@ export async function cancelBooking(
   booking.cancellation_reason = reason;
 
   // Release time_block
-  const blockIdx = memDb.timeBlocks.findIndex((b) => b.booking_id === bookingId);
+  const blockIdx = store.timeBlocks.findIndex((b) => b.booking_id === bookingId);
   if (blockIdx !== -1) {
-    memDb.timeBlocks.splice(blockIdx, 1);
+    store.timeBlocks.splice(blockIdx, 1);
   }
 
-  persistStore();
+  saveStoreToDisk(store);
 
-  const tier = memDb.serviceTiers.find((t) => t.id === booking.service_tier_id);
-  const service = tier ? memDb.services.find((s) => s.id === tier.service_id) : null;
+  const tier = store.serviceTiers.find((t) => t.id === booking.service_tier_id);
+  const service = tier ? store.services.find((s) => s.id === tier.service_id) : null;
 
   return {
     success: true,
     booking: {
       id: booking.id,
+      referenceNumber: booking.reference_number || `YYC-${String(booking.id).padStart(6, "0")}`,
       serviceName: service ? service.name : "Reflexology Therapy",
       durationMinutes: tier ? tier.duration_minutes : 60,
-      totalPrice: booking.total_price,
+      totalPrice: Number(booking.total_price),
       currency: tier ? tier.currency : "CAD",
       clientName: booking.client_name,
       clientEmail: booking.client_email,
       clientPhone: booking.client_phone,
       clientAddress: booking.client_address,
-      startTime: booking.start_time,
-      endTime: booking.end_time,
+      startTime: parseClinicDateTime(booking.start_time),
+      endTime: parseClinicDateTime(booking.end_time),
       cancellationReason: reason,
     },
   };
@@ -771,10 +784,11 @@ export async function updateServiceTierPrice(tierId: number, price: number): Pro
     return res.affectedRows > 0;
   }
 
-  const tier = memDb.serviceTiers.find((t) => t.id === tierId);
+  const store = getStore();
+  const tier = store.serviceTiers.find((t) => t.id === tierId);
   if (tier) {
     tier.price = price;
-    persistStore();
+    saveStoreToDisk(store);
     return true;
   }
   return false;
@@ -797,15 +811,16 @@ export async function createService(params: {
     return { id: res.insertId };
   }
 
-  const id = memDb.nextServiceId++;
-  memDb.services.push({
+  const store = getStore();
+  const id = store.nextServiceId ? store.nextServiceId++ : 5;
+  store.services.push({
     id,
     name: params.name,
     description: params.description,
     is_active: true,
-    created_at: new Date(),
+    created_at: new Date().toISOString(),
   });
-  persistStore();
+  saveStoreToDisk(store);
   return { id };
 }
 
@@ -820,11 +835,12 @@ export async function deleteService(serviceId: number): Promise<boolean> {
     return res.affectedRows > 0;
   }
 
-  const idx = memDb.services.findIndex((s) => s.id === serviceId);
+  const store = getStore();
+  const idx = store.services.findIndex((s) => s.id === serviceId);
   if (idx !== -1) {
-    memDb.services.splice(idx, 1);
-    memDb.serviceTiers = memDb.serviceTiers.filter((t) => t.service_id !== serviceId);
-    persistStore();
+    store.services.splice(idx, 1);
+    store.serviceTiers = store.serviceTiers.filter((t) => t.service_id !== serviceId);
+    saveStoreToDisk(store);
     return true;
   }
   return false;
@@ -852,24 +868,25 @@ export async function addServiceTier(params: {
     return { id: res.insertId || params.serviceId };
   }
 
-  const existing = memDb.serviceTiers.find(
+  const store = getStore();
+  const existing = store.serviceTiers.find(
     (t) => t.service_id === params.serviceId && t.duration_minutes === params.durationMinutes
   );
   if (existing) {
     existing.price = params.price;
-    persistStore();
+    saveStoreToDisk(store);
     return { id: existing.id };
   }
 
-  const id = memDb.nextTierId++;
-  memDb.serviceTiers.push({
+  const id = store.nextTierId ? store.nextTierId++ : 13;
+  store.serviceTiers.push({
     id,
     service_id: params.serviceId,
     duration_minutes: params.durationMinutes,
     price: params.price,
     currency,
   });
-  persistStore();
+  saveStoreToDisk(store);
   return { id };
 }
 
@@ -884,10 +901,11 @@ export async function deleteServiceTier(tierId: number): Promise<boolean> {
     return res.affectedRows > 0;
   }
 
-  const idx = memDb.serviceTiers.findIndex((t) => t.id === tierId);
+  const store = getStore();
+  const idx = store.serviceTiers.findIndex((t) => t.id === tierId);
   if (idx !== -1) {
-    memDb.serviceTiers.splice(idx, 1);
-    persistStore();
+    store.serviceTiers.splice(idx, 1);
+    saveStoreToDisk(store);
     return true;
   }
   return false;
@@ -911,9 +929,10 @@ export async function getClinicSettings(): Promise<{ startTime: string; endTime:
     };
   }
 
+  const store = getStore();
   return {
-    startTime: memDb.settings.clinic_start_time,
-    endTime: memDb.settings.clinic_end_time,
+    startTime: store.settings?.clinic_start_time || "09:00",
+    endTime: store.settings?.clinic_end_time || "18:00",
   };
 }
 
@@ -933,9 +952,11 @@ export async function updateClinicSettings(startTime: string, endTime: string): 
     return true;
   }
 
-  memDb.settings.clinic_start_time = startTime;
-  memDb.settings.clinic_end_time = endTime;
-  persistStore();
+  const store = getStore();
+  if (!store.settings) store.settings = { clinic_start_time: "09:00", clinic_end_time: "18:00" };
+  store.settings.clinic_start_time = startTime;
+  store.settings.clinic_end_time = endTime;
+  saveStoreToDisk(store);
   return true;
 }
 
@@ -956,7 +977,8 @@ export async function getClinicHolidays(): Promise<{ id: number; holidayDate: st
     }));
   }
 
-  return memDb.holidays.map((h) => ({
+  const store = getStore();
+  return (store.holidays || []).map((h) => ({
     id: h.id,
     holidayDate: h.holiday_date,
     name: h.name,
@@ -978,9 +1000,11 @@ export async function addClinicHoliday(holidayDate: string, name: string): Promi
     return { id: res.insertId };
   }
 
-  const id = memDb.nextHolidayId++;
-  memDb.holidays.push({ id, holiday_date: holidayDate, name });
-  persistStore();
+  const store = getStore();
+  if (!store.holidays) store.holidays = [];
+  const id = store.nextHolidayId ? store.nextHolidayId++ : 1;
+  store.holidays.push({ id, holiday_date: holidayDate, name });
+  saveStoreToDisk(store);
   return { id };
 }
 
@@ -995,10 +1019,12 @@ export async function deleteClinicHoliday(holidayId: number): Promise<boolean> {
     return res.affectedRows > 0;
   }
 
-  const idx = memDb.holidays.findIndex((h) => h.id === holidayId);
+  const store = getStore();
+  if (!store.holidays) store.holidays = [];
+  const idx = store.holidays.findIndex((h) => h.id === holidayId);
   if (idx !== -1) {
-    memDb.holidays.splice(idx, 1);
-    persistStore();
+    store.holidays.splice(idx, 1);
+    saveStoreToDisk(store);
     return true;
   }
   return false;
@@ -1021,7 +1047,8 @@ export async function checkIfHoliday(dateStr: string): Promise<{ isHoliday: bool
     return { isHoliday: false };
   }
 
-  const found = memDb.holidays.find((h) => h.holiday_date === dateStr);
+  const store = getStore();
+  const found = (store.holidays || []).find((h) => h.holiday_date === dateStr);
   if (found) {
     return { isHoliday: true, holidayName: found.name };
   }

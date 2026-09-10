@@ -40,22 +40,34 @@ export function getCurrentDateInClinicTz(): string {
 }
 
 /**
- * Parses an ISO string or wall-clock string into an exact Date object in Mountain Time
+ * Parses an ISO string, wall-clock string, or Date into an exact Date object in Mountain Time
  */
-export function parseClinicDateTime(dateStr: string): Date {
+export function parseClinicDateTime(dateInput: string | Date): Date {
+  if (dateInput instanceof Date) {
+    return isNaN(dateInput.getTime()) ? new Date() : dateInput;
+  }
+  const dateStr = String(dateInput || "");
+  if (!dateStr) return new Date();
   // If string contains explicit timezone offset at end (e.g. "Z" or "-06:00" or "+00:00")
   if (dateStr.endsWith("Z") || /[+-]\d{2}:?\d{2}$/.test(dateStr)) {
-    return new Date(dateStr);
+    const d = new Date(dateStr);
+    return isNaN(d.getTime()) ? new Date() : d;
   }
   // Otherwise treat as Mountain Time wall-clock string
-  return fromZonedTime(dateStr, CLINIC_TIMEZONE);
+  try {
+    return fromZonedTime(dateStr, CLINIC_TIMEZONE);
+  } catch {
+    const d = new Date(dateStr);
+    return isNaN(d.getTime()) ? new Date() : d;
+  }
 }
 
 /**
  * Returns YYYY-MM-DD for any Date in Mountain Time
  */
-export function formatToClinicDateStr(date: Date): string {
-  return formatInTimeZone(date, CLINIC_TIMEZONE, "yyyy-MM-dd");
+export function formatToClinicDateStr(date: Date | string): string {
+  const dt = date instanceof Date ? date : new Date(date);
+  return formatInTimeZone(isNaN(dt.getTime()) ? new Date() : dt, CLINIC_TIMEZONE, "yyyy-MM-dd");
 }
 
 /**
@@ -63,35 +75,43 @@ export function formatToClinicDateStr(date: Date): string {
  */
 export function createClinicDateTime(dateStr: string, timeStr: string): Date {
   const dateString = `${dateStr}T${timeStr.padStart(5, "0")}:00`;
-  return fromZonedTime(dateString, CLINIC_TIMEZONE);
+  try {
+    return fromZonedTime(dateString, CLINIC_TIMEZONE);
+  } catch {
+    return new Date(dateString);
+  }
 }
 
 /**
  * Formats a Date object to Mountain Time string (HH:mm)
  */
-export function formatToClinicTime(date: Date): string {
-  return formatInTimeZone(date, CLINIC_TIMEZONE, "HH:mm");
+export function formatToClinicTime(date: Date | string): string {
+  const dt = date instanceof Date ? date : new Date(date);
+  return formatInTimeZone(isNaN(dt.getTime()) ? new Date() : dt, CLINIC_TIMEZONE, "HH:mm");
 }
 
 /**
  * Formats a Date object to Mountain Time display (e.g. 9:00 AM)
  */
-export function formatToClinicDisplayTime(date: Date): string {
-  return formatInTimeZone(date, CLINIC_TIMEZONE, "h:mm a");
+export function formatToClinicDisplayTime(date: Date | string): string {
+  const dt = date instanceof Date ? date : new Date(date);
+  return formatInTimeZone(isNaN(dt.getTime()) ? new Date() : dt, CLINIC_TIMEZONE, "h:mm a");
 }
 
 /**
  * Formats a Date object to Mountain Time full date display (e.g. Wednesday, Sep 10, 2026)
  */
-export function formatToClinicDisplayDate(date: Date): string {
-  return formatInTimeZone(date, CLINIC_TIMEZONE, "EEEE, MMM d, yyyy");
+export function formatToClinicDisplayDate(date: Date | string): string {
+  const dt = date instanceof Date ? date : new Date(date);
+  return formatInTimeZone(isNaN(dt.getTime()) ? new Date() : dt, CLINIC_TIMEZONE, "EEEE, MMM d, yyyy");
 }
 
 /**
  * Formats a Date object into SQL DATETIME format (YYYY-MM-DD HH:MM:SS) in Clinic Timezone
  */
-export function formatToSqlDateTime(date: Date): string {
-  return formatInTimeZone(date, CLINIC_TIMEZONE, "yyyy-MM-dd HH:mm:ss");
+export function formatToSqlDateTime(date: Date | string): string {
+  const dt = date instanceof Date ? date : new Date(date);
+  return formatInTimeZone(isNaN(dt.getTime()) ? new Date() : dt, CLINIC_TIMEZONE, "yyyy-MM-dd HH:mm:ss");
 }
 
 /**

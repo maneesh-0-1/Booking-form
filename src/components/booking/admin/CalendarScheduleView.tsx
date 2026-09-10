@@ -53,8 +53,15 @@ export const CalendarScheduleView: React.FC<CalendarScheduleViewProps> = ({
         <div style={{ display: "flex", flexDirection: "column", gap: 10, maxHeight: 400, overflowY: "auto", paddingRight: 6 }}>
           {blocks.map((block) => {
             const isBooked = block.blockType === "BOOKED";
-            const sDate = new Date(block.startTime);
-            const eDate = new Date(block.endTime);
+            const formatSafe = (d: any, fmt: string) => {
+              try {
+                const dt = new Date(d);
+                if (isNaN(dt.getTime())) return "N/A";
+                return format(dt, fmt);
+              } catch {
+                return "N/A";
+              }
+            };
 
             return (
               <div
@@ -87,7 +94,7 @@ export const CalendarScheduleView: React.FC<CalendarScheduleViewProps> = ({
                   <div>
                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                       <span style={{ fontWeight: 700, fontSize: 14, color: "#1e293b" }}>
-                        {format(sDate, "EEE, MMM d, yyyy")}
+                        {formatSafe(block.startTime, "EEE, MMM d, yyyy")}
                       </span>
                       <span
                         style={{
@@ -106,7 +113,7 @@ export const CalendarScheduleView: React.FC<CalendarScheduleViewProps> = ({
                     <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 4, fontSize: 13, color: "#475569" }}>
                       <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
                         <Clock size={12} />
-                        {format(sDate, "h:mm a")} – {format(eDate, "h:mm a")} (MT)
+                        {formatSafe(block.startTime, "h:mm a")} – {formatSafe(block.endTime, "h:mm a")} (MT)
                       </span>
                       {block.reason && (
                         <span style={{ color: "#64748b" }}>• {block.reason}</span>

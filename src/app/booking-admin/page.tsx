@@ -87,6 +87,16 @@ export default function BookingAdminPage() {
   const [editingTierId, setEditingTierId] = useState<number | null>(null);
   const [editPrice, setEditPrice] = useState<string>("");
 
+  const formatSafeDate = (d: any, fmt: string) => {
+    try {
+      const dt = new Date(d);
+      if (isNaN(dt.getTime())) return "N/A";
+      return format(dt, fmt);
+    } catch {
+      return "N/A";
+    }
+  };
+
   useEffect(() => {
     const savedToken = localStorage.getItem("yyc_admin_token");
     if (savedToken) {
@@ -98,30 +108,32 @@ export default function BookingAdminPage() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const headers: Record<string, string> = {};
+      const headers: Record<string, string> = {
+        "Cache-Control": "no-cache",
+      };
       const activeToken =
         token || (typeof window !== "undefined" ? localStorage.getItem("yyc_admin_token") : null) || "";
       if (activeToken) headers["x-admin-token"] = activeToken;
 
       const [servRes, blockRes, apptRes, settRes, holRes] = await Promise.all([
-        fetch("/api/booking/admin/services", { headers }),
-        fetch("/api/booking/admin/blocks", { headers }),
-        fetch("/api/booking/admin/appointments", { headers }),
-        fetch("/api/booking/admin/settings", { headers }),
-        fetch("/api/booking/admin/holidays", { headers }),
+        fetch("/api/booking/admin/services", { headers, cache: "no-store" }),
+        fetch("/api/booking/admin/blocks", { headers, cache: "no-store" }),
+        fetch("/api/booking/admin/appointments", { headers, cache: "no-store" }),
+        fetch("/api/booking/admin/settings", { headers, cache: "no-store" }),
+        fetch("/api/booking/admin/holidays", { headers, cache: "no-store" }),
       ]);
 
-      if (servRes.status === 401 || blockRes.status === 401 || apptRes.status === 401) {
+      if (servRes.status === 401 || blockRes.status === 401 || apptRes.status === 401 || settRes.status === 401 || holRes.status === 401) {
         setIsAuthenticated(false);
         localStorage.removeItem("yyc_admin_token");
         return;
       }
 
-      const servData = await servRes.json();
-      const blockData = await blockRes.json();
-      const apptData = await apptRes.json();
-      const settData = await settRes.json();
-      const holData = await holRes.json();
+      const servData = await servRes.json().catch(() => ({ success: false }));
+      const blockData = await blockRes.json().catch(() => ({ success: false }));
+      const apptData = await apptRes.json().catch(() => ({ success: false }));
+      const settData = await settRes.json().catch(() => ({ success: false }));
+      const holData = await holRes.json().catch(() => ({ success: false }));
 
       if (servData.success) setServices(servData.services || []);
       if (blockData.success) setBlocks(blockData.blocks || []);
@@ -717,7 +729,7 @@ export default function BookingAdminPage() {
                           <strong style={{ color: "#1e293b" }}>Service:</strong> {appt.serviceName} ({appt.durationMinutes}m)
                         </span>
                         <span>
-                          <strong style={{ color: "#1e293b" }}>Date & Time:</strong> {format(sDate, "EEE, MMM d, yyyy")} at {format(sDate, "h:mm a")} MT
+                          <strong style={{ color: "#1e293b" }}>Date & Time:</strong> {formatSafeDate(appt.startTime, "EEE, MMM d, yyyy")} at {formatSafeDate(appt.startTime, "h:mm a")} MT
                         </span>
                         <span>
                           <strong style={{ color: "#1e293b" }}>Fee:</strong> ${Number(appt.totalPrice).toFixed(2)} {appt.currency}

@@ -578,9 +578,9 @@ export default function BookingAdminPage() {
           </form>
 
           <div style={{ textAlign: "center", marginTop: 24 }}>
-            <Link href="/" style={{ fontSize: 13, color: "#689f38", textDecoration: "none", fontWeight: 600 }}>
-              ← Return to Public Booking Site
-            </Link>
+            <a href="https://yycreflexology.ca" target="_blank" rel="noopener noreferrer" style={{ fontSize: 13, color: "#689f38", textDecoration: "none", fontWeight: 600 }}>
+              ← Return to Main Website (yycreflexology.ca)
+            </a>
           </div>
         </div>
       </div>
@@ -611,10 +611,10 @@ export default function BookingAdminPage() {
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <Link href="/" target="_blank" className={styles.btnSecondary} style={{ fontSize: 13, padding: "8px 16px" }}>
+          <a href="https://yycreflexology.ca" target="_blank" rel="noopener noreferrer" className={styles.btnSecondary} style={{ fontSize: 13, padding: "8px 16px" }}>
             <ExternalLink size={14} />
-            Client View
-          </Link>
+            Main Website
+          </a>
           <button type="button" className={styles.btnSecondary} onClick={fetchData} style={{ fontSize: 13, padding: "8px 16px" }} title="Refresh database records">
             <RefreshCw size={14} className={loading ? "spinner" : ""} />
             Refresh

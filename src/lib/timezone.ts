@@ -1,7 +1,7 @@
 import { toZonedTime, fromZonedTime, formatInTimeZone } from "date-fns-tz";
 import { format, parseISO, addMinutes } from "date-fns";
 
-export const CLINIC_TIMEZONE = process.env.CLINIC_TIMEZONE || "America/Edmonton";
+export const CLINIC_TIMEZONE = process.env.NEXT_PUBLIC_CLINIC_TIMEZONE || process.env.CLINIC_TIMEZONE || "America/Edmonton";
 
 // Clinic hours (09:00 to 18:00 Mountain Time)
 export const CLINIC_START_HOUR = 9;
@@ -21,14 +21,11 @@ export interface AvailableSlot {
 }
 
 /**
- * Returns today's date formatted as YYYY-MM-DD in the local user/client environment
+ * Returns today's date formatted as YYYY-MM-DD in the Mountain Time (America/Edmonton) clinic environment
  */
 export function getLocalTodayDateString(): string {
-  const d = new Date();
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
+  const now = new Date();
+  return formatInTimeZone(now, CLINIC_TIMEZONE, "yyyy-MM-dd");
 }
 
 /**

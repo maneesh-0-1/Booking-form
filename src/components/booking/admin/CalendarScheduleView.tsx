@@ -2,7 +2,8 @@
 
 import React from "react";
 import { Trash2, Clock, Calendar, Lock, UserCheck, Shield } from "lucide-react";
-import { format } from "date-fns";
+import { formatInTimeZone } from "date-fns-tz";
+import { CLINIC_TIMEZONE } from "@/lib/timezone";
 
 export interface TimeBlockItem {
   id: number;
@@ -57,7 +58,7 @@ export const CalendarScheduleView: React.FC<CalendarScheduleViewProps> = ({
               try {
                 const dt = new Date(d);
                 if (isNaN(dt.getTime())) return "N/A";
-                return format(dt, fmt);
+                return formatInTimeZone(dt, CLINIC_TIMEZONE, fmt);
               } catch {
                 return "N/A";
               }

@@ -27,7 +27,8 @@ import { QuickBlockModal } from "@/components/booking/admin/QuickBlockModal";
 import { CalendarScheduleView, TimeBlockItem } from "@/components/booking/admin/CalendarScheduleView";
 import { ServiceItem } from "@/components/booking/BookingModal";
 import styles from "@/components/booking/booking.module.css";
-import { format } from "date-fns";
+import { formatInTimeZone } from "date-fns-tz";
+import { CLINIC_TIMEZONE } from "@/lib/timezone";
 
 export default function BookingAdminPage() {
   // Auth state
@@ -129,7 +130,7 @@ export default function BookingAdminPage() {
     try {
       const dt = new Date(d);
       if (isNaN(dt.getTime())) return "N/A";
-      return format(dt, fmt);
+      return formatInTimeZone(dt, CLINIC_TIMEZONE, fmt);
     } catch {
       return "N/A";
     }

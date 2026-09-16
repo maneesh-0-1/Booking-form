@@ -1,5 +1,5 @@
 import nodemailer from "nodemailer";
-import { format } from "date-fns";
+import { formatInTimeZone } from "date-fns-tz";
 
 export interface BookingEmailData {
   bookingId: number;
@@ -17,6 +17,7 @@ export interface BookingEmailData {
   cancellationReason?: string;
 }
 
+const CLINIC_TIMEZONE = process.env.NEXT_PUBLIC_CLINIC_TIMEZONE || process.env.CLINIC_TIMEZONE || "America/Edmonton";
 const CLINIC_NAME = process.env.CLINIC_NAME || "YYC Reflexology Clinic";
 const CLINIC_ADDRESS = process.env.CLINIC_ADDRESS || "10880 Hidden Valley DR NW Calgary";
 const FROM_EMAIL = process.env.SMTP_FROM || process.env.SMTP_USER || "bookings@yycreflexology.ca";
@@ -37,6 +38,9 @@ export function createMailTransporter() {
     tls: {
       rejectUnauthorized: false, // Bypass self-signed or shared host verification issues on cPanel VPS
     },
+    connectionTimeout: 15000,
+    greetingTimeout: 15000,
+    socketTimeout: 20000,
   });
 }
 
@@ -58,8 +62,8 @@ export function generateIcsContent(
 
   return [
     "BEGIN:VCALENDAR",
-    "VERSION:2.0",
     "PRODID:-//YYC Reflexology Clinic//Booking Engine//EN",
+    "VERSION:2.0",
     "CALSCALE:GREGORIAN",
     `METHOD:${method}`,
     "BEGIN:VEVENT",
@@ -69,9 +73,11 @@ export function generateIcsContent(
     `DTEND:${endUtc}`,
     `SEQUENCE:${sequence}`,
     `STATUS:${status}`,
-    `SUMMARY:${method === "CANCEL" ? "CANCELLED: " : ""}${data.serviceName} [${refCode}] - ${CLIC_SUMMARY(data)}`,
+    `SUMMARY:${method === "CANCEL" ? "CANCELLED: " : ""}${data.serviceName} [${refCode}] - ${CLINIC_NAME}`,
     `DESCRIPTION:${CLIC_DESCRIPTION(data, method)}`,
     `LOCATION:${CLINIC_ADDRESS}`,
+    `ORGANIZER;CN="${CLINIC_NAME}":mailto:${FROM_EMAIL}`,
+    `ATTENDEE;ROLE=REQ-PARTICIPANT;PARTSTAT=ACCEPTED;CN="${data.clientName}":mailto:${data.clientEmail}`,
     "BEGIN:VALARM",
     "TRIGGER:-PT2H",
     "ACTION:DISPLAY",
@@ -101,11 +107,13 @@ export async function sendBookingNotifications(data: BookingEmailData): Promise<
   try {
     const transporter = createMailTransporter();
     const icsContent = generateIcsContent(data, "REQUEST");
-    const formattedDate = format(data.startTime, "EEEE, MMMM d, yyyy");
-    const formattedTime = format(data.startTime, "h:mm a");
+    
+    // Fixed strictly to America/Edmonton Mountain Time
+    const formattedDate = formatInTimeZone(data.startTime, CLINIC_TIMEZONE, "EEEE, MMMM d, yyyy");
+    const formattedTime = formatInTimeZone(data.startTime, CLINIC_TIMEZONE, "h:mm a");
     const refCode = data.referenceNumber || `#${data.bookingId}`;
 
-    // 1. Client Confirmation
+    // 1. Client Confirmation - HTML Version
     const clientHtml = `
       <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #1e293b; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
         <div style="background: linear-gradient(135deg, #1e293b, #334155); padding: 32px 24px; color: #ffffff; text-align: center;">
@@ -136,7 +144,7 @@ export async function sendBookingNotifications(data: BookingEmailData): Promise<
               </tr>
               <tr>
                 <td style="padding: 6px 0; color: #64748b;">Time:</td>
-                <td style="padding: 6px 0; font-weight: 600; text-align: right;">${formattedTime} (Mountain Time)</td>
+                <td style="padding: 6px 0; font-weight: 600; text-align: right;">${formattedTime} (Mountain Time - Edmonton)</td>
               </tr>
               <tr>
                 <td style="padding: 6px 0; color: #64748b;">Clinic Location:</td>
@@ -163,12 +171,38 @@ export async function sendBookingNotifications(data: BookingEmailData): Promise<
       </div>
     `;
 
-    // 2. Doctor / Practitioner Alert
+    // 1. Client Confirmation - Plain Text Version (Essential for spam filter deliverability)
+    const clientText = `
+${CLINIC_NAME} - Booking Confirmation
+Appointment Reference: ${refCode}
+
+Dear ${data.clientName},
+
+Your reflexology appointment has been confirmed. Below are your appointment details:
+
+- Reference Number: ${refCode}
+- Service: ${data.serviceName}
+- Duration: ${data.durationMinutes} Minutes
+- Date: ${formattedDate}
+- Time: ${formattedTime} (Mountain Time - Edmonton)
+- Clinic Location: ${CLINIC_ADDRESS}
+- Total Fee: $${Number(data.totalPrice).toFixed(2)} ${data.currency}
+
+A calendar invite (.ics) is attached to this email to add this appointment to your calendar.
+
+Cancellation Policy: Please provide at least 24 hours advance notice if you need to reschedule or cancel.
+
+For questions, contact us at ${ADMIN_EMAIL}.
+${CLINIC_NAME}
+${CLINIC_ADDRESS}
+    `.trim();
+
+    // 2. Doctor / Practitioner Alert - HTML Version
     const doctorHtml = `
       <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #1e293b; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;">
         <div style="background: #1e293b; padding: 24px; color: #ffffff;">
           <h2 style="margin: 0 0 6px 0; font-size: 20px;">New Booking Confirmed [Ref: ${refCode}]</h2>
-          <p style="margin: 0; opacity: 0.85; font-size: 13px;">${formattedDate} at ${formattedTime}</p>
+          <p style="margin: 0; opacity: 0.85; font-size: 13px;">${formattedDate} at ${formattedTime} (MT - Edmonton)</p>
         </div>
         <div style="padding: 24px;">
           <h3 style="margin-top: 0; color: #334155; font-size: 16px; border-bottom: 2px solid #e2e8f0; padding-bottom: 6px;">Patient Intake</h3>
@@ -186,38 +220,72 @@ export async function sendBookingNotifications(data: BookingEmailData): Promise<
       </div>
     `;
 
+    // 2. Doctor / Practitioner Alert - Plain Text Version
+    const doctorText = `
+New Booking Confirmed [Ref: ${refCode}]
+Date: ${formattedDate} at ${formattedTime} (Mountain Time - Edmonton)
+
+Patient Intake:
+- Reference: ${refCode}
+- Name: ${data.clientName}
+- Email: ${data.clientEmail}
+- Phone: ${data.clientPhone}
+- Address: ${data.clientAddress}
+
+Service Information:
+- Service: ${data.serviceName}
+- Duration: ${data.durationMinutes} Minutes
+- Amount: $${Number(data.totalPrice).toFixed(2)} ${data.currency}
+    `.trim();
+
     // Dispatch concurrently and log result
-    console.log(`[Mailer] Dispatching confirmation emails for ${refCode} to ${data.clientEmail} and ${ADMIN_EMAIL}...`);
+    console.log(`[Mailer] Dispatching confirmation emails for ${refCode} to patient (${data.clientEmail.trim()}) and practitioner (${ADMIN_EMAIL.trim()})...`);
+    
     const results = await Promise.allSettled([
       transporter.sendMail({
         from: `"${CLINIC_NAME}" <${FROM_EMAIL}>`,
         replyTo: ADMIN_EMAIL,
-        to: data.clientEmail,
-        bcc: ADMIN_EMAIL,
+        to: data.clientEmail.trim(),
         subject: `Booking Confirmed [Ref: ${refCode}]: ${data.serviceName} on ${formattedDate}`,
+        text: clientText,
         html: clientHtml,
         icalEvent: {
           filename: `reflexology-appointment-${refCode}.ics`,
           method: "REQUEST",
           content: icsContent,
         },
+        attachments: [
+          {
+            filename: `reflexology-appointment-${refCode}.ics`,
+            content: icsContent,
+            contentType: "text/calendar; charset=utf-8; method=REQUEST",
+          },
+        ],
       }),
       transporter.sendMail({
         from: `"${CLINIC_NAME} System" <${FROM_EMAIL}>`,
-        replyTo: data.clientEmail,
-        to: ADMIN_EMAIL,
+        replyTo: data.clientEmail.trim(),
+        to: ADMIN_EMAIL.trim(),
         subject: `[New Patient - Ref: ${refCode}] ${data.clientName} - ${formattedDate} ${formattedTime}`,
+        text: doctorText,
         html: doctorHtml,
         icalEvent: {
           filename: `reflexology-appointment-${refCode}.ics`,
           method: "REQUEST",
           content: icsContent,
         },
+        attachments: [
+          {
+            filename: `reflexology-appointment-${refCode}.ics`,
+            content: icsContent,
+            contentType: "text/calendar; charset=utf-8; method=REQUEST",
+          },
+        ],
       }),
     ]);
 
     results.forEach((res, idx) => {
-      const recipient = idx === 0 ? `Patient (${data.clientEmail}) & BCC (${ADMIN_EMAIL})` : `Practitioner (${ADMIN_EMAIL})`;
+      const recipient = idx === 0 ? `Patient (${data.clientEmail.trim()})` : `Practitioner (${ADMIN_EMAIL.trim()})`;
       if (res.status === "fulfilled") {
         console.log(`[Mailer Success] Sent to ${recipient}, messageId: ${res.value.messageId}`);
       } else {
@@ -236,8 +304,10 @@ export async function sendCancellationNotifications(data: BookingEmailData): Pro
   try {
     const transporter = createMailTransporter();
     const icsContent = generateIcsContent(data, "CANCEL");
-    const formattedDate = format(data.startTime, "EEEE, MMMM d, yyyy");
-    const formattedTime = format(data.startTime, "h:mm a");
+    
+    // Fixed strictly to America/Edmonton Mountain Time
+    const formattedDate = formatInTimeZone(data.startTime, CLINIC_TIMEZONE, "EEEE, MMMM d, yyyy");
+    const formattedTime = formatInTimeZone(data.startTime, CLINIC_TIMEZONE, "h:mm a");
 
     const clientHtml = `
       <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #1e293b; background: #ffffff; border: 1px solid #fee2e2; border-radius: 12px; overflow: hidden;">
@@ -247,7 +317,7 @@ export async function sendCancellationNotifications(data: BookingEmailData): Pro
         </div>
         <div style="padding: 24px;">
           <p>Dear <strong>${data.clientName}</strong>,</p>
-          <p>Your upcoming appointment for <strong>${data.serviceName}</strong> scheduled on <strong>${formattedDate} at ${formattedTime}</strong> has been cancelled.</p>
+          <p>Your upcoming appointment for <strong>${data.serviceName}</strong> scheduled on <strong>${formattedDate} at ${formattedTime} (Mountain Time - Edmonton)</strong> has been cancelled.</p>
           
           <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 16px; margin: 20px 0;">
             <p style="margin: 0; font-size: 14px; color: #991b1b;">
@@ -265,34 +335,67 @@ export async function sendCancellationNotifications(data: BookingEmailData): Pro
       </div>
     `;
 
+    const clientText = `
+${CLINIC_NAME} - Appointment Cancelled
+Booking #${data.bookingId}
+
+Dear ${data.clientName},
+
+Your upcoming appointment for ${data.serviceName} scheduled on ${formattedDate} at ${formattedTime} (Mountain Time - Edmonton) has been cancelled.
+
+Reason from Clinic: ${data.cancellationReason || "Practitioner schedule adjustment"}
+
+To reschedule at your convenience, please visit our booking portal or contact us directly at ${ADMIN_EMAIL}.
+
+${CLINIC_NAME}
+${CLINIC_ADDRESS}
+    `.trim();
+
     const doctorHtml = `
       <div style="font-family: Arial, sans-serif; padding: 20px;">
         <h3 style="color: #991b1b;">Appointment #${data.bookingId} Cancelled</h3>
         <p>Patient: ${data.clientName} (${data.clientEmail})</p>
-        <p>Slot: ${formattedDate} at ${formattedTime}</p>
-        <p>Reason: ${data.cancellationReason}</p>
+        <p>Slot: ${formattedDate} at ${formattedTime} (MT - Edmonton)</p>
+        <p>Reason: ${data.cancellationReason || "N/A"}</p>
         <p><em>The slot has been released back into open inventory.</em></p>
       </div>
     `;
+
+    const doctorText = `
+Appointment #${data.bookingId} Cancelled
+Patient: ${data.clientName} (${data.clientEmail})
+Slot: ${formattedDate} at ${formattedTime} (Mountain Time - Edmonton)
+Reason: ${data.cancellationReason || "N/A"}
+The slot has been released back into open inventory.
+    `.trim();
 
     await Promise.allSettled([
       transporter.sendMail({
         from: `"${CLINIC_NAME}" <${FROM_EMAIL}>`,
         replyTo: ADMIN_EMAIL,
-        to: data.clientEmail,
+        to: data.clientEmail.trim(),
         subject: `Cancelled: ${data.serviceName} on ${formattedDate}`,
+        text: clientText,
         html: clientHtml,
         icalEvent: {
           filename: `reflexology-cancelled-${data.bookingId}.ics`,
           method: "CANCEL",
           content: icsContent,
         },
+        attachments: [
+          {
+            filename: `reflexology-cancelled-${data.bookingId}.ics`,
+            content: icsContent,
+            contentType: "text/calendar; charset=utf-8; method=CANCEL",
+          },
+        ],
       }),
       transporter.sendMail({
         from: `"${CLINIC_NAME} Engine" <${FROM_EMAIL}>`,
-        replyTo: data.clientEmail,
-        to: ADMIN_EMAIL,
+        replyTo: data.clientEmail.trim(),
+        to: ADMIN_EMAIL.trim(),
         subject: `[Cancelled] Slot Released #${data.bookingId} - ${formattedDate}`,
+        text: doctorText,
         html: doctorHtml,
       }),
     ]);
@@ -300,3 +403,4 @@ export async function sendCancellationNotifications(data: BookingEmailData): Pro
     console.error("[Mailer] Notice: Failed to dispatch cancellation emails:", err);
   }
 }
+

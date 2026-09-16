@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { ServiceTierSelector, Tier } from "./ServiceTierSelector";
 import { TimeSlotPicker } from "./TimeSlotPicker";
-import { AvailableSlot, getLocalTodayDateString } from "@/lib/timezone";
+import { AvailableSlot, getLocalTodayDateString, formatToClinicDisplayDate, formatToClinicDisplayTime } from "@/lib/timezone";
 
 export interface ServiceItem {
   id: number;
@@ -351,18 +351,8 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                 <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
                   <span style={{ color: "#64748b" }}>Date & Time:</span>
                   <span style={{ fontWeight: 600, color: "#1e293b" }}>
-                    {new Date(confirmedBooking.startTime).toLocaleDateString("en-US", {
-                      weekday: "short",
-                      month: "short",
-                      day: "numeric",
-                    })}{" "}
-                    at{" "}
-                    {new Date(confirmedBooking.startTime).toLocaleTimeString("en-US", {
-                      hour: "numeric",
-                      minute: "2-digit",
-                      hour12: true,
-                    })}{" "}
-                    MT
+                    {formatToClinicDisplayDate(confirmedBooking.startTime)} at{" "}
+                    {formatToClinicDisplayTime(confirmedBooking.startTime)} (MT)
                   </span>
                 </div>
                 <div style={{ display: "flex", justifyContent: "space-between" }}>

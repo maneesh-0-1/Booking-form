@@ -868,7 +868,7 @@ export default function BookingAdminPage() {
         <div className="animate-fade-in">
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
             <div>
-              <h2 style={{ fontSize: 18, fontWeight: 700 }}>Clinical Services & Custom Duration Tiers</h2>
+              <h2 style={{ fontSize: 18, fontWeight: 700 }}>Services & Custom Duration Tiers</h2>
               <p style={{ fontSize: 13, color: "var(--text-secondary)" }}>
                 Add new therapeutic services, create custom duration time slots (30m, 45m, 60m, 75m, etc.), and adjust fees.
               </p>
@@ -935,7 +935,7 @@ export default function BookingAdminPage() {
                     <thead>
                       <tr style={{ borderBottom: "1px solid var(--border-subtle)", color: "var(--text-muted)", fontSize: 11, textTransform: "uppercase" }}>
                         <th style={{ padding: "10px 16px" }}>Duration (Minutes)</th>
-                        <th style={{ padding: "10px 16px" }}>Clinical Fee</th>
+                        <th style={{ padding: "10px 16px" }}>Service Fee</th>
                         <th style={{ padding: "10px 16px", textAlign: "right" }}>Actions</th>
                       </tr>
                     </thead>
@@ -1209,7 +1209,7 @@ export default function BookingAdminPage() {
               <textarea
                 value={cancelReason}
                 onChange={(e) => setCancelReason(e.target.value)}
-                placeholder="e.g. Practitioner clinical emergency, schedule reschedule required"
+                placeholder="e.g. Practitioner emergency, schedule reschedule required"
                 className={styles.formTextarea}
                 rows={3}
                 id="cancel-reason-textarea"
@@ -1239,7 +1239,7 @@ export default function BookingAdminPage() {
       {isAddServiceOpen && (
         <div className={styles.backdrop} onClick={(e) => e.target === e.currentTarget && setIsAddServiceOpen(false)}>
           <div style={{ background: "var(--bg-card)", border: "1px solid var(--border-active)", borderRadius: "var(--radius-lg)", padding: 32, width: "100%", maxWidth: 480 }} className="animate-fade-in">
-            <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 6 }}>Add New Clinical Service</h3>
+            <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 6 }}>Add New Service</h3>
             <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 20 }}>
               Create a new therapeutic discipline in your clinic catalog.
             </p>
@@ -1259,9 +1259,9 @@ export default function BookingAdminPage() {
               </div>
 
               <div className={styles.formGroup}>
-                <label className={styles.formLabel}>Clinical Description</label>
+                <label className={styles.formLabel}>Service Description</label>
                 <textarea
-                  placeholder="Brief clinical description of what this session involves..."
+                  placeholder="Brief description of what this session involves..."
                   value={newServiceDesc}
                   onChange={(e) => setNewServiceDesc(e.target.value)}
                   className={styles.formTextarea}

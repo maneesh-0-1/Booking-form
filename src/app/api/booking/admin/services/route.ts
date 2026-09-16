@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { action } = body;
 
-    // 1. Add New Clinical Service
+    // 1. Add New Service
     if (action === "add_service") {
       const { name, description } = body;
       if (!name || name.trim().length < 2) {

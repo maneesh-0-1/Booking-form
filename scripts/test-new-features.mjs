@@ -6,7 +6,7 @@ async function runNewFeatureTests() {
     "x-admin-token": adminToken,
   };
 
-  console.log("\n=== 1. Testing Admin: Create New Clinical Service ===");
+  console.log("\n=== 1. Testing Admin: Create New Service ===");
   const newServRes = await fetch(`${baseUrl}/api/booking/admin/services`, {
     method: "POST",
     headers: authHeaders,

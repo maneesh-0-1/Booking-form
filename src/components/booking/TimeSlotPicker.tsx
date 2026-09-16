@@ -78,7 +78,7 @@ export const TimeSlotPicker: React.FC<TimeSlotPickerProps> = ({
       <div className={styles.formGroup}>
         <label className={styles.formLabel} htmlFor="appointment-date-input">
           <Calendar size={14} style={{ display: "inline", verticalAlign: "middle", marginRight: 6 }} />
-          Select Clinical Date
+          Select Date
         </label>
         <input
           id="appointment-date-input"
@@ -130,7 +130,7 @@ export const TimeSlotPicker: React.FC<TimeSlotPickerProps> = ({
         ) : slots.length === 0 ? (
           <div className={styles.noSlotsNotice}>
             <p style={{ fontWeight: 600, color: "#1e293b", marginBottom: 4 }}>No available slots on this date</p>
-            <p>The practitioner is fully booked or outside clinical hours. Please select another date.</p>
+            <p>The practitioner is fully booked or outside working hours. Please select another date.</p>
           </div>
         ) : (
           <div className={styles.slotGridContainer}>

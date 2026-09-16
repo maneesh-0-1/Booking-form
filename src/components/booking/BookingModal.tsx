@@ -75,7 +75,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
           }
         }
       } catch (err) {
-        console.error("Failed to load clinical services", err);
+        console.error("Failed to load services", err);
       } finally {
         setLoadingServices(false);
       }
@@ -296,7 +296,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
             <div>
               <div className={styles.totalLabel}>Total Fee</div>
               <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2 }}>
-                Inclusive of clinical taxes
+                Inclusive of taxes
               </div>
             </div>
             <div className={styles.totalAmount}>
@@ -386,7 +386,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
             <div className="animate-fade-in">
               <div style={{ marginBottom: 20, paddingBottom: 12, borderBottom: "1px solid var(--border-subtle)" }}>
                 <h2 style={{ fontSize: 20, fontWeight: 800, color: "#1e293b" }}>
-                  Schedule Your Clinical Session
+                  Schedule Your Session
                 </h2>
                 <p style={{ fontSize: 13, color: "var(--text-secondary)", marginTop: 4 }}>
                   Select therapy and time slot, then enter your patient details below.

@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "YYC Reflexology Clinic | Clinical Appointment & Scheduling",
+  title: "YYC Reflexology Clinic | Appointment & Scheduling",
   description:
-    "Self-hosted clinical appointment scheduling engine for YYC Reflexology Clinic in Calgary, Alberta. Real-time availability, transaction-safe booking, and instant calendar synchronization.",
+    "Self-hosted appointment scheduling engine for YYC Reflexology Clinic in Calgary, Alberta. Real-time availability, transaction-safe booking, and instant calendar synchronization.",
 };
 
 export default function RootLayout({

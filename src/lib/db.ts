@@ -163,7 +163,7 @@ export async function ensurePostgresSchema(): Promise<void> {
         (1, 'Foot Reflexology Therapy', 'Targeted stimulation of neurological reflex zones in feet to restore equilibrium, relieve tension, and enhance circulation.', TRUE),
         (2, 'Hand & Palm Reflexology', 'Precision pressure technique on neuromuscular zones of the palms and fingers to relieve repetitive strain and upper body stress.', TRUE),
         (3, 'Combined Integrated Reflexology', 'Comprehensive therapeutic dual-treatment focusing on both foot and hand meridian points for full autonomic nervous balance.', TRUE),
-        (4, 'Deep Meridian Clinical Care', 'Specialized therapeutic focus addressing persistent structural fatigue, chronic inflammation, and plantar fascial tension.', TRUE)
+        (4, 'Deep Meridian Care', 'Specialized therapeutic focus addressing persistent structural fatigue, chronic inflammation, and plantar fascial tension.', TRUE)
         ON CONFLICT (id) DO NOTHING
       `;
 
@@ -250,7 +250,7 @@ function getDefaultStore(): ClinicStore {
       },
       {
         id: 4,
-        name: "Deep Meridian Clinical Care",
+        name: "Deep Meridian Care",
         description: "Specialized therapeutic focus addressing persistent structural fatigue, chronic inflammation, and plantar fascial tension.",
         is_active: true,
         created_at: new Date().toISOString(),
@@ -848,7 +848,7 @@ export async function getAllBookings(): Promise<any[]> {
       totalPrice: Number(r.total_price),
       status: r.status,
       cancellationReason: r.cancellation_reason,
-      serviceName: r.service_name || "Clinical Reflexology",
+      serviceName: r.service_name || "Reflexology Therapy",
       durationMinutes: Number(r.duration_minutes || 60),
       currency: r.currency || "CAD",
     }));
@@ -878,7 +878,7 @@ export async function getAllBookings(): Promise<any[]> {
       totalPrice: Number(r.total_price),
       status: r.status,
       cancellationReason: r.cancellation_reason,
-      serviceName: r.service_name || "Clinical Reflexology",
+      serviceName: r.service_name || "Reflexology Therapy",
       durationMinutes: Number(r.duration_minutes || 60),
       currency: r.currency || "CAD",
     }));
@@ -900,7 +900,7 @@ export async function getAllBookings(): Promise<any[]> {
       totalPrice: Number(b.total_price),
       status: b.status,
       cancellationReason: b.cancellation_reason,
-      serviceName: service ? service.name : "Clinical Reflexology",
+      serviceName: service ? service.name : "Reflexology Therapy",
       durationMinutes: tier ? tier.duration_minutes : 60,
       currency: tier ? tier.currency : "CAD",
     };
@@ -938,7 +938,7 @@ export async function cancelBooking(
       booking: {
         id: booking.id,
         referenceNumber: booking.reference_code || `YYC-${String(booking.id).padStart(6, "0")}`,
-        serviceName: booking.service_name || "Clinical Reflexology",
+        serviceName: booking.service_name || "Reflexology Therapy",
         durationMinutes: Number(booking.duration_minutes || 60),
         totalPrice: Number(booking.total_price),
         currency: booking.currency || "CAD",
@@ -987,7 +987,7 @@ export async function cancelBooking(
         booking: {
           id: booking.id,
           referenceNumber: booking.reference_code || `YYC-${String(booking.id).padStart(6, "0")}`,
-          serviceName: booking.service_name || "Clinical Reflexology",
+          serviceName: booking.service_name || "Reflexology Therapy",
           durationMinutes: Number(booking.duration_minutes || 60),
           totalPrice: Number(booking.total_price),
           currency: booking.currency || "CAD",
@@ -1077,7 +1077,7 @@ export async function updateServiceTierPrice(tierId: number, price: number): Pro
 }
 
 /**
- * Admin: Create a new clinical service
+ * Admin: Create a new service
  */
 export async function createService(params: { name: string; description: string }): Promise<{ id: number }> {
   const dbType = await isDatabaseActive();

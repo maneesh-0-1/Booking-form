@@ -47,7 +47,7 @@ export const CalendarScheduleView: React.FC<CalendarScheduleViewProps> = ({
         <div style={{ textAlign: "center", padding: "40px 16px", color: "#64748b", background: "#f8fafc", borderRadius: 12, border: "1px dashed #cbd5e1" }}>
           <Calendar size={28} style={{ margin: "0 auto 8px", opacity: 0.6, color: "#689f38" }} />
           <p style={{ fontWeight: 600, color: "#1e293b" }}>No active blocks or bookings</p>
-          <p style={{ fontSize: 13, marginTop: 4 }}>All clinical slots within clinic hours are currently available.</p>
+          <p style={{ fontSize: 13, marginTop: 4 }}>All appointment slots within clinic hours are currently available.</p>
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 10, maxHeight: 400, overflowY: "auto", paddingRight: 6 }}>

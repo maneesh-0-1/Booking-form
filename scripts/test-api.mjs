@@ -69,7 +69,7 @@ async function runTests() {
     body: JSON.stringify({
       startTime: "2026-09-15T14:00:00",
       endTime: "2026-09-15T16:00:00",
-      reason: "Clinical Staff Training & Disinfection",
+      reason: "Staff Training & Disinfection",
     }),
   });
   const blockData = await blockRes.json();

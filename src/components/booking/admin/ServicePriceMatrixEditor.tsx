@@ -69,7 +69,7 @@ export const ServicePriceMatrixEditor: React.FC<ServicePriceMatrixEditorProps> =
         <div>
           <h3 style={{ fontSize: 18, fontWeight: 700 }}>Service Pricing & Duration Matrix</h3>
           <p style={{ fontSize: 13, color: "var(--text-secondary)" }}>
-            Live clinical rate matrix. Click any fee to modify price directly without code changes.
+            Live service rate matrix. Click any fee to modify price directly without code changes.
           </p>
         </div>
         {feedback && (
@@ -84,7 +84,7 @@ export const ServicePriceMatrixEditor: React.FC<ServicePriceMatrixEditorProps> =
         <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: 14 }}>
           <thead>
             <tr style={{ borderBottom: "1px solid var(--border-subtle)", color: "var(--text-muted)", fontSize: 12, textTransform: "uppercase", letterSpacing: "0.05em" }}>
-              <th style={{ padding: "12px 16px" }}>Clinical Service</th>
+              <th style={{ padding: "12px 16px" }}>Service</th>
               <th style={{ padding: "12px 16px", textAlign: "center" }}>30 Min Fee</th>
               <th style={{ padding: "12px 16px", textAlign: "center" }}>45 Min Fee</th>
               <th style={{ padding: "12px 16px", textAlign: "center" }}>60 Min Fee</th>

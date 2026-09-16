@@ -57,12 +57,12 @@ CREATE TABLE IF NOT EXISTS `time_blocks` (
   INDEX `idx_block_lookup` (`start_time`, `end_time`, `block_type`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Seed Clinical Services & Standard Pricing Tiers
-INSERT INTO `services` (`id`, `name`, `description`, `is_active`) VALUES
+-- Seed Services & Standard Pricing Tiers
+INSERT INTO services (id, name, description, is_active) VALUES
 (1, 'Foot Reflexology Therapy', 'Targeted stimulation of neurological reflex zones in feet to restore equilibrium, relieve tension, and enhance circulation.', TRUE),
 (2, 'Hand & Palm Reflexology', 'Precision pressure technique on neuromuscular zones of the palms and fingers to relieve repetitive strain and upper body stress.', TRUE),
 (3, 'Combined Integrated Reflexology', 'Comprehensive therapeutic dual-treatment focusing on both foot and hand meridian points for full autonomic nervous balance.', TRUE),
-(4, 'Deep Meridian Clinical Care', 'Specialized therapeutic focus addressing persistent structural fatigue, chronic inflammation, and plantar fascial tension.', TRUE)
+(4, 'Deep Meridian Care', 'Specialized therapeutic focus addressing persistent structural fatigue, chronic inflammation, and plantar fascial tension.', TRUE)
 ON DUPLICATE KEY UPDATE `name` = VALUES(`name`), `description` = VALUES(`description`);
 
 -- Seed Tier Matrix (30m, 45m, 60m)

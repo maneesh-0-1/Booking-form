@@ -19,7 +19,8 @@ export interface BookingEmailData {
 
 const CLINIC_NAME = process.env.CLINIC_NAME || "YYC Reflexology Clinic";
 const CLINIC_ADDRESS = process.env.CLINIC_ADDRESS || "10880 Hidden Valley DR NW Calgary";
-const ADMIN_EMAIL = process.env.ADMIN_NOTIFICATION_EMAIL || "bookings@yycreflexology.ca";
+const FROM_EMAIL = process.env.SMTP_FROM || process.env.SMTP_USER || "bookings@yycreflexology.ca";
+const ADMIN_EMAIL = process.env.ADMIN_NOTIFICATION_EMAIL || "yycreflexology@gmail.com";
 
 // Create reusable Nodemailer transporter matching cPanel specifications
 export function createMailTransporter() {
@@ -113,7 +114,7 @@ export async function sendBookingNotifications(data: BookingEmailData): Promise<
         </div>
         <div style="padding: 28px 24px;">
           <p style="font-size: 16px; margin-top: 0;">Dear <strong>${data.clientName}</strong>,</p>
-          <p style="color: #475569; line-height: 1.6;">Your clinical reflexology appointment has been confirmed. Below are your appointment and reference details:</p>
+          <p style="color: #475569; line-height: 1.6;">Your reflexology appointment has been confirmed. Below are your appointment and reference details:</p>
           
           <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin: 24px 0;">
             <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
@@ -189,8 +190,10 @@ export async function sendBookingNotifications(data: BookingEmailData): Promise<
     console.log(`[Mailer] Dispatching confirmation emails for ${refCode} to ${data.clientEmail} and ${ADMIN_EMAIL}...`);
     const results = await Promise.allSettled([
       transporter.sendMail({
-        from: `"${CLINIC_NAME}" <${ADMIN_EMAIL}>`,
+        from: `"${CLINIC_NAME}" <${FROM_EMAIL}>`,
+        replyTo: ADMIN_EMAIL,
         to: data.clientEmail,
+        bcc: ADMIN_EMAIL,
         subject: `Booking Confirmed [Ref: ${refCode}]: ${data.serviceName} on ${formattedDate}`,
         html: clientHtml,
         icalEvent: {
@@ -200,7 +203,8 @@ export async function sendBookingNotifications(data: BookingEmailData): Promise<
         },
       }),
       transporter.sendMail({
-        from: `"${CLINIC_NAME} System" <${ADMIN_EMAIL}>`,
+        from: `"${CLINIC_NAME} System" <${FROM_EMAIL}>`,
+        replyTo: data.clientEmail,
         to: ADMIN_EMAIL,
         subject: `[New Patient - Ref: ${refCode}] ${data.clientName} - ${formattedDate} ${formattedTime}`,
         html: doctorHtml,
@@ -213,7 +217,7 @@ export async function sendBookingNotifications(data: BookingEmailData): Promise<
     ]);
 
     results.forEach((res, idx) => {
-      const recipient = idx === 0 ? `Patient (${data.clientEmail})` : `Practitioner (${ADMIN_EMAIL})`;
+      const recipient = idx === 0 ? `Patient (${data.clientEmail}) & BCC (${ADMIN_EMAIL})` : `Practitioner (${ADMIN_EMAIL})`;
       if (res.status === "fulfilled") {
         console.log(`[Mailer Success] Sent to ${recipient}, messageId: ${res.value.messageId}`);
       } else {
@@ -273,7 +277,8 @@ export async function sendCancellationNotifications(data: BookingEmailData): Pro
 
     await Promise.allSettled([
       transporter.sendMail({
-        from: `"${CLINIC_NAME}" <${ADMIN_EMAIL}>`,
+        from: `"${CLINIC_NAME}" <${FROM_EMAIL}>`,
+        replyTo: ADMIN_EMAIL,
         to: data.clientEmail,
         subject: `Cancelled: ${data.serviceName} on ${formattedDate}`,
         html: clientHtml,
@@ -284,7 +289,8 @@ export async function sendCancellationNotifications(data: BookingEmailData): Pro
         },
       }),
       transporter.sendMail({
-        from: `"${CLINIC_NAME} Engine" <${ADMIN_EMAIL}>`,
+        from: `"${CLINIC_NAME} Engine" <${FROM_EMAIL}>`,
+        replyTo: data.clientEmail,
         to: ADMIN_EMAIL,
         subject: `[Cancelled] Slot Released #${data.bookingId} - ${formattedDate}`,
         html: doctorHtml,

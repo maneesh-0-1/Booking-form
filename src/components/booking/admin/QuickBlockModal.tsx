@@ -182,7 +182,7 @@ export const QuickBlockModal: React.FC<QuickBlockModalProps> = ({
               type="text"
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              placeholder="e.g. Clinical meeting, Personal errand, Emergency"
+              placeholder="e.g. Team meeting, Personal errand, Emergency"
               className={styles.formInput}
               id="block-reason-input"
             />

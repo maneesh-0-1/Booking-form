@@ -21,7 +21,7 @@ const CLINIC_TIMEZONE = process.env.NEXT_PUBLIC_CLINIC_TIMEZONE || process.env.C
 const CLINIC_NAME = process.env.CLINIC_NAME || "YYC Reflexology Clinic";
 const CLINIC_ADDRESS = process.env.CLINIC_ADDRESS || "10880 Hidden Valley DR NW Calgary";
 const FROM_EMAIL = process.env.SMTP_FROM || process.env.SMTP_USER || "bookings@yycreflexology.ca";
-const ADMIN_EMAIL = process.env.ADMIN_NOTIFICATION_EMAIL || "yycreflexology@gmail.com";
+const ADMIN_EMAIL = process.env.ADMIN_NOTIFICATION_EMAIL || "info@yycreflexology.ca";
 
 // Create reusable Nodemailer transporter matching cPanel specifications
 export function createMailTransporter() {
